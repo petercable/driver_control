@@ -21,6 +21,7 @@ public class DriverModel {
     protected Map<String, Parameter> parameters = new HashMap<String, Parameter>();
     private SimpleStringProperty state = new SimpleStringProperty();
     private SimpleBooleanProperty paramsSettable = new SimpleBooleanProperty();
+    private DriverConfig config;
 
     public DriverModel() {
         // do something here, probably need some handles
@@ -103,6 +104,9 @@ public class DriverModel {
 
     public void setState(String state) {
         log.debug("Received setState: " + state);
+        if (state.startsWith("[")) {
+            state = new JSONArray(state).getString(0);
+        }
         this.state.set(state);
     }
 
@@ -111,15 +115,18 @@ public class DriverModel {
     }
 
     public void setParams(JSONObject params) {
-        for(Object key: params.keySet()) {
-            String name = (String) key;
-            String value = getString(params, name);
-            Parameter param = parameters.get(name);
-            if(!Objects.equals(param.getValue(), value)) {
-                log.debug("UPDATED PARAM: " + name + " VALUE: " + value);
-                param.setValue(value);
+        if (params != null) {
+            for (Object key : params.keySet()) {
+                String name = (String) key;
+                String value = getString(params, name);
+                if (name != null) {
+                    Parameter param = parameters.get(name);
+                    if (!Objects.equals(param.getValue(), value)) {
+                        log.debug("UPDATED PARAM: " + name + " VALUE: " + value);
+                        param.setValue(value);
+                    }
+                }
             }
-
         }
     }
 
@@ -149,4 +156,13 @@ public class DriverModel {
     public SimpleBooleanProperty getParamsSettableProperty() {
         return paramsSettable;
     }
+
+    public void setConfig(DriverConfig config) {
+        this.config = config;
+    }
+
+    public DriverConfig getConfig() {
+        return config;
+    }
+
 }

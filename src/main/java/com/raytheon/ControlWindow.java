@@ -6,20 +6,33 @@ import javafx.beans.value.ObservableValue;
 import javafx.collections.ListChangeListener;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.MapValueFactory;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.VBoxBuilder;
+import javafx.stage.FileChooser;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
 import org.apache.logging.log4j.LogManager;
 import org.json.JSONObject;
 
+import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 
 public class ControlWindow {
+    @FXML
+    AnchorPane root;
     @FXML
     private TableView<ProtocolCommand> commandTable;
     @FXML
@@ -46,7 +59,7 @@ public class ControlWindow {
     private TabPane tabPane;
 
 
-    private DriverModel model;
+    private DriverModel model = new DriverModel();
     private DriverControl controller;
     private EventListener listener;
     private static org.apache.logging.log4j.Logger log = LogManager.getLogger();
@@ -125,15 +138,10 @@ public class ControlWindow {
         );
     }
 
-    public void setup(DriverModel model, DriverControl controller, EventListener listener) {
-        this.model = model;
-        this.controller = controller;
-        this.listener = listener;
-        commandTable.setItems(model.commandList);
-        parameterTable.setItems(model.paramList);
-        this.model.getStateProperty().addListener(stateListener);
-        this.model.getParamsSettableProperty().addListener(settableListener);
-        this.model.sampleTypes.addListener(sampleChangeListener);
+    private int getPort(String filename) throws Exception {
+        Path path = Paths.get(filename);
+        String contents = new String(Files.readAllBytes(path));
+        return Integer.parseInt(contents.trim());
     }
 
     public void selectCommand(MouseEvent event) {
@@ -175,7 +183,37 @@ public class ControlWindow {
     }
 
     public void getConfig() {
-        log.debug("Dan hasn't figured out the yaml config file yet. Check back in two weeks.");
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Open Driver Config");
+        File file = fileChooser.showOpenDialog(root.getScene().getWindow());
+
+        if (file != null) {
+            boolean success = false;
+            DriverConfig config = null;
+            String error = "";
+            try {
+                config = new DriverConfig(file);
+                success = true;
+            } catch (IOException e) {
+                error = "(Unable to open the specified file)";
+            } catch (URISyntaxException e) {
+                error = "(Unable to parse egg URL)";
+            } catch (ClassCastException e) {
+                error = "(Unable to parse YAML)";
+            }
+            if (success) {
+                model.setConfig(config);
+                console.appendText(config.toString());
+                statusField.setText("config file parsed successfully!");
+            } else {
+                Stage dialogStage = new Stage();
+                dialogStage.initModality(Modality.WINDOW_MODAL);
+                dialogStage.setScene(new Scene(VBoxBuilder.create().
+                        children(new Label("Unable to load configuration file!"), new Label(error)).
+                        alignment(Pos.CENTER).padding(new Insets(15)).build()));
+                dialogStage.show();
+            }
+        }
     }
 
     public void launchDriver() throws IOException, InterruptedException {
@@ -190,6 +228,51 @@ public class ControlWindow {
         Process p = Runtime.getRuntime().exec("cd " + this.driverPath);
 
         Runtime.getRuntime().exec("./launch_driver --event_port_file=/tmp/event_port --command_port_file=/tmp/command_port");
+    }
+
+    public void zmqConnect() {
+        // create model and controllers
+        DriverConfig config = model.getConfig();
+        if (config != null) {
+            try {
+                String host = config.getHost();
+                int eventPort = getPort(config.getEventPortFile());
+                int commandPort = getPort(config.getCommandPortFile());
+                controller = new DriverControl(host, commandPort, model);
+                listener = new EventListener(host, eventPort, model, controller);
+                listener.start();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public void configure() {
+        controller.getProtocolState();
+        String state = model.getState();
+        log.debug("Called configure.  Current state: " + state + " Configuration: " + model.getConfig());
+        if (Objects.equals(state, "DRIVER_STATE_UNCONFIGURED")) {
+            controller.configure();
+            controller.init();
+        }
+    }
+
+    public void connect() {
+        controller.getProtocolState();
+        String state = model.getState();
+        log.debug("Called connect.  Current state: " + state);
+        if (Objects.equals(state, "DRIVER_STATE_DISCONNECTED")) {
+            controller.connect();
+        }
+    }
+
+    public void discover() {
+        controller.getProtocolState();
+        String state = model.getState();
+        log.debug("Called discover.  Current state: " + state);
+        if (Objects.equals(state, "DRIVER_STATE_UNKNOWN")) {
+            controller.discover();
+        }
     }
 
     public void validateStreams() {

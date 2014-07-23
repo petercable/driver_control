@@ -1,1 +1,20 @@
 parameters:
+  rga_steps_per_amu: 10
+  mcu_one_minute: 1000
+  rga_initial_mass: 1
+  rga_filament_emission_set: 1.0
+  massp_sample_interval: 3600
+  turbo_max_temp_bearing: 65
+  turbo_target_speed: 90000
+  turbo_status_update_interval: 5
+  rga_final_mass: 100
+  turbo_max_temp_motor: 90
+  rga_ion_energy: 1
+  rga_high_voltage_cdem: 0
+  rga_focus_voltage: 90
+  mcu_telegram_interval: 10000
+  turbo_max_drive_current: 140
+  mcu_sample_time: 10
+  rga_electron_energy: 70
+  turbo_min_speed: 80000
+  rga_noise_floor: 3

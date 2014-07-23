@@ -1,3 +1,12 @@
-addr: rsn-port-agent-test.oceanobservatories.org
-port: 13008
-cmd_port: 12008
+mcu:
+  addr: rsn-port-agent-test.oceanobservatories.org
+  port: 13026
+  cmd_port: 12026
+turbo:
+  addr: rsn-port-agent-test.oceanobservatories.org
+  port: 13027
+  cmd_port: 12027
+rga:
+  addr: rsn-port-agent-test.oceanobservatories.org
+  port: 13028
+  cmd_port: 12028
