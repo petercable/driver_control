@@ -52,10 +52,10 @@ public class EventListener extends Thread {
                     log.info("Received SAMPLE event: " + sample);
                     model.publishSample(sample);
                 } else if (MessageTypes.CONFIG_CHANGE.equals(type)) {
-                    log.info("Received CONFIG_CHANGE");
+                    log.info("Received CONFIG_CHANGE event: " + event);
                     model.setParams(event.getJSONObject(VALUE));
                 } else if (MessageTypes.STATE_CHANGE.equals(type)) {
-                    log.info("Received STATE CHANGE");
+                    log.info("Received STATE CHANGE event: " + event);
                     controller.getCapabilities();
                     model.setState(event.getString(VALUE));
                 } else {

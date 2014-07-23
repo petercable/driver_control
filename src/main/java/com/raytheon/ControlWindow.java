@@ -241,6 +241,7 @@ public class ControlWindow {
                 controller = new DriverControl(host, commandPort, model);
                 listener = new EventListener(host, eventPort, model, controller);
                 listener.start();
+                controller.getProtocolState();
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -254,6 +255,7 @@ public class ControlWindow {
         if (Objects.equals(state, "DRIVER_STATE_UNCONFIGURED")) {
             controller.configure();
             controller.init();
+            controller.getMetadata();
         }
     }
 
@@ -266,6 +268,10 @@ public class ControlWindow {
         }
     }
 
+    public void getCapabilities() {
+        controller.getCapabilities();
+    }
+
     public void discover() {
         controller.getProtocolState();
         String state = model.getState();
@@ -273,6 +279,10 @@ public class ControlWindow {
         if (Objects.equals(state, "DRIVER_STATE_UNKNOWN")) {
             controller.discover();
         }
+    }
+
+    public void shutdownDriver() {
+        controller.stop();
     }
 
     public void validateStreams() {
