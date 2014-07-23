@@ -24,7 +24,6 @@ public class DriverModel {
     private DriverConfig config;
 
     public DriverModel() {
-        // do something here, probably need some handles
         log.debug("Created driver model");
     }
 

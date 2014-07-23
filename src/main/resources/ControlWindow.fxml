@@ -18,6 +18,7 @@
                                 <MenuItem mnemonicParsing="false" onAction="#zmqConnect" text="Connect to Driver"/>
                                 <MenuItem mnemonicParsing="false" onAction="#configure" text="Configure"/>
                                 <MenuItem mnemonicParsing="false" onAction="#getCapabilities" text="Get Capabilities"/>
+                                <MenuItem mnemonicParsing="false" onAction="#getParams" text="Get Parameters"/>
                                 <MenuItem mnemonicParsing="false" onAction="#connect" text="Connect to Instrument"/>
                                 <MenuItem mnemonicParsing="false" onAction="#discover" text="Discover"/>
                                 <MenuItem mnemonicParsing="false" onAction="#shutdownDriver" text="Shutdown"/>

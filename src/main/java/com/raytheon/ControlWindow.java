@@ -68,6 +68,7 @@ public class ControlWindow {
     private ChangeListener<String> stateListener = new ChangeListener<String>() {
         @Override
         public void changed(ObservableValue<? extends String> observableValue, String s, String s2) {
+            log.debug("State change detected! Updating stateField.");
             stateField.setText((observableValue).getValue());
         }
     };
@@ -136,6 +137,12 @@ public class ControlWindow {
                     }
                 }
         );
+
+        commandTable.setItems(model.commandList);
+        parameterTable.setItems(model.paramList);
+        this.model.getStateProperty().addListener(stateListener);
+        this.model.getParamsSettableProperty().addListener(settableListener);
+        this.model.sampleTypes.addListener(sampleChangeListener);
     }
 
     private int getPort(String filename) throws Exception {
@@ -270,6 +277,10 @@ public class ControlWindow {
 
     public void getCapabilities() {
         controller.getCapabilities();
+    }
+
+    public void getParams() {
+        controller.getResource("DRIVER_PARAMETER_ALL");
     }
 
     public void discover() {
