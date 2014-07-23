@@ -1,74 +1,75 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import java.lang.*?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.control.*?>
 
-<AnchorPane prefHeight="600.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/8"
-            xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.raytheon.ControlWindow">
-       <TabPane fx:id="tabPane" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0"
-                tabClosingPolicy="UNAVAILABLE" AnchorPane.bottomAnchor="26.0" AnchorPane.leftAnchor="0.0"
-                AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-           <Tab text="Commands">
-               <content>
-                   <AnchorPane>
-                       <children>
-                           <TableView fx:id="commandTable" layoutX="14.0" layoutY="14.0"
-                                      onMouseClicked="#selectCommand" AnchorPane.bottomAnchor="0.0"
-                                      AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0"
-                                      AnchorPane.topAnchor="0.0">
-                               <columns>
-                                   <TableColumn fx:id="commandColumn" prefWidth="300.0" text="Command" />
-                                   <TableColumn fx:id="commandNameColumn" minWidth="0.0"
-                                                prefWidth="400.0" text="Description" />
-                               </columns>
-                           </TableView>
-                       </children>
-                  </AnchorPane>
-               </content>
-           </Tab>
-           <Tab text="Parameters">
-               <content>
-                   <AnchorPane>
-                       <children>
-                           <TableView fx:id="parameterTable" editable="true" layoutX="14.0" layoutY="14.0"
-                                      AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0"
-                                      AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-                               <columns>
-                                   <TableColumn fx:id="parameterNameColumn" prefWidth="400.0" text="Parameter" />
-                                   <TableColumn fx:id="parameterValueColumn" prefWidth="150.0" text="Value" />
-                              <TableColumn fx:id="parameterNewValueColumn" prefWidth="150.0" text="New Value" />
-                               </columns>
-                           </TableView>
-                        <Button fx:id="sendParamButton" mnemonicParsing="false" onMouseClicked="#sendParams"
-                                text="Send" translateZ="1.0" AnchorPane.bottomAnchor="5.0"
-                                AnchorPane.rightAnchor="25.0" />
-                       </children>
-                  </AnchorPane>
-               </content>
-           </Tab>
-           <Tab text="Console">
-               <content>
-                   <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
-                       <children>
-                           <TextArea fx:id="console" layoutX="14.0" layoutY="14.0" AnchorPane.bottomAnchor="0.0"
-                                     AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0"
-                                     AnchorPane.topAnchor="0.0" />
-                       </children>
-                   </AnchorPane>
-               </content>
-           </Tab>
-       </TabPane>
-      <GridPane layoutY="381.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
-        <columnConstraints>
-          <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
-          <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
-        </columnConstraints>
-        <rowConstraints>
-          <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-        </rowConstraints>
+<AnchorPane prefHeight="520.0" prefWidth="813.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.raytheon.ControlWindow">
+   <children>
+      <VBox prefHeight="529.0" prefWidth="813.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
          <children>
-            <TextField fx:id="stateField" editable="false" />
-            <TextField fx:id="statusField" editable="false" prefWidth="373.0" GridPane.columnIndex="1" />
+            <MenuBar minHeight="29.0">
+              <menus>
+                  <Menu mnemonicParsing="false" text="Driver">
+                     <items>
+                        <MenuItem mnemonicParsing="false" onAction="#getConfig" text="Config" />
+                        <MenuItem mnemonicParsing="false" onAction="#launchDriver" text="Launch" />
+                     </items>
+                  </Menu>
+                <Menu mnemonicParsing="false" text="Test">
+                  <items>
+                    <MenuItem mnemonicParsing="false" onAction="#validateStreams" text="Validate Streams" />
+                  </items>
+                </Menu>
+                <Menu mnemonicParsing="false" text="Help">
+                  <items>
+                    <MenuItem mnemonicParsing="false" onAction="#displayTestProcedures" text="Test Procedures" />
+                  </items>
+                </Menu>
+              </menus>
+            </MenuBar>
+                <TabPane minHeight="100.0" minWidth="100.0" tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS">
+                   <tabs>
+                       <Tab text="Commands">
+                           <content>
+                                 <TableView fx:id="commandTable" layoutX="14.0" layoutY="14.0" minHeight="100.0" onMouseClicked="#selectCommand" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                     <columns>
+                                         <TableColumn fx:id="commandColumn" prefWidth="300.0" text="Command" />
+                                         <TableColumn fx:id="commandNameColumn" minWidth="0.0" prefWidth="400.0" text="Description" />
+                                     </columns>
+                                 </TableView>
+                           </content>
+                       </Tab>
+                       <Tab text="Parameters">
+                           <content>
+                               <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                                   <children>
+                                       <TableView fx:id="parameterTable" editable="true" layoutX="14.0" layoutY="14.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                           <columns>
+                                               <TableColumn fx:id="parameterNameColumn" prefWidth="400.0" text="Parameter" />
+                                               <TableColumn fx:id="parameterValueColumn" prefWidth="150.0" text="Value" />
+                                          <TableColumn fx:id="parameterNewValueColumn" prefWidth="150.0" text="New Value" />
+                                           </columns>
+                                       </TableView>
+                                    <Button fx:id="sendParamButton" mnemonicParsing="false" onMouseClicked="#sendParams" text="Send" translateZ="1.0" AnchorPane.bottomAnchor="5.0" AnchorPane.rightAnchor="25.0" />
+                                   </children>
+                              </AnchorPane>
+                           </content>
+                       </Tab>
+                       <Tab text="Console">
+                           <content>
+                                 <TextArea fx:id="console" layoutY="-28.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+                           </content>
+                       </Tab>
+                   </tabs>
+                </TabPane>
+            <HBox minHeight="26.0">
+               <children>
+                     <TextField fx:id="stateField" editable="false" minHeight="26.0" prefHeight="26.0" prefWidth="238.0" HBox.hgrow="NEVER" />
+                     <TextField fx:id="statusField" editable="false" GridPane.columnIndex="1" HBox.hgrow="ALWAYS" />
+               </children>
+            </HBox>
          </children>
-      </GridPane>
+      </VBox>
+   </children>
 </AnchorPane>

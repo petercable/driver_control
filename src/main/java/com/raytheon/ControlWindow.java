@@ -14,6 +14,9 @@ import javafx.scene.input.MouseEvent;
 import org.apache.logging.log4j.LogManager;
 import org.json.JSONObject;
 
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.*;
 
 public class ControlWindow {
@@ -99,6 +102,7 @@ public class ControlWindow {
             });
         }
     };
+    private String driverPath;
 
     @FXML
     private void initialize() {
@@ -168,5 +172,35 @@ public class ControlWindow {
             p.setNewValue("");
         }
         controller.setResource(new JSONObject(values).toString());
+    }
+
+    public void getConfig() {
+        log.debug("Dan hasn't figured out the yaml config file yet. Check back in two weeks.");
+    }
+
+    public void launchDriver() throws IOException, InterruptedException {
+        /// build command to exec:
+        /// cd ~/Workspace/eggs/thsph/
+        /// ./launch_driver --event_port_file=/tmp/event_port --command_port_file=/tmp/command_port
+        if (this.driverPath == null)
+        {
+            //user prompt "Enter path to driver launch script"
+            this.driverPath = "~/Workspace/eggs/thsph";
+        }
+        Process p = Runtime.getRuntime().exec("cd " + this.driverPath);
+
+        Runtime.getRuntime().exec("./launch_driver --event_port_file=/tmp/event_port --command_port_file=/tmp/command_port");
+    }
+
+    public void validateStreams() {
+        log.debug("Pete is too lazy to implement this.");
+        /// get preload URL from user
+        /// make sure we have a data stream capture from driver
+        /// prompt user to select data stream name from list
+        /// compare data stream fields with those listed in preload
+    }
+
+    public void displayTestProcedures() {
+        log.debug("Dan hasn't figured out how to create another window in Scene Builder, but Pete will in two seconds...");
     }
 }

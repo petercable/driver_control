@@ -16,8 +16,6 @@ import java.util.Map;
 public class Main extends Application {
     private static Logger log = LogManager.getLogger();
     private EventListener listener;
-    private DriverControl controller;
-    private DriverModel model;
 
     private int getPort(String filename) throws Exception {
         Path path = Paths.get(filename);
@@ -26,14 +24,15 @@ public class Main extends Application {
     }
 
     @Override
-    public void start(Stage primaryStage) throws Exception {
+    public void start(Stage stage) throws Exception {
         try {
             // create window
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/ControlWindow.fxml"));
             Parent root = (Parent) loader.load();
-            primaryStage.setTitle("DriverControl");
-            primaryStage.setScene(new Scene(root, 800, 600));
-            primaryStage.show();
+            Scene scene = new Scene(root, 800, 600);
+            stage.setTitle("DriverControl");
+            stage.setScene(scene);
+            stage.show();
 
             // get config
             Map params = getParameters().getNamed();
@@ -42,8 +41,8 @@ public class Main extends Application {
             String driver_host = "localhost";
 
             // create model and controllers
-            model = new DriverModel();
-            controller = new DriverControl(driver_host, command_port, model);
+            DriverModel model = new DriverModel();
+            DriverControl controller = new DriverControl(driver_host, command_port, model);
             listener = new EventListener(driver_host, event_port, model, controller);
 
             // register the model and controllers with the view
