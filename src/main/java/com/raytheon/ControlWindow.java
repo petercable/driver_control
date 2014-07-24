@@ -20,11 +20,14 @@ import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import org.apache.logging.log4j.LogManager;
+import org.controlsfx.control.action.Action;
+import org.controlsfx.dialog.Dialog;
+import org.controlsfx.dialog.Dialogs;
 import org.json.JSONObject;
 
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -58,34 +61,53 @@ public class ControlWindow {
     private Button sendParamButton;
     @FXML
     private TabPane tabPane;
-
+    @FXML
+    private TextArea driverLogArea;
+    @FXML
+    private Button refreshLogButton;
 
     private DriverModel model = new DriverModel();
     private DriverControl controller;
     protected EventListener listener;
     private static org.apache.logging.log4j.Logger log = LogManager.getLogger();
 
+    private boolean driverUp = false;
+
     // Listeners
     private ChangeListener<String> stateListener = new ChangeListener<String>() {
         @Override
         public void changed(ObservableValue<? extends String> observableValue, String s, String s2) {
-            log.debug("State change detected! Updating stateField.");
-            stateField.setText((observableValue).getValue());
+            Platform.runLater(new Runnable() {
+                @Override
+                public void run() {
+                    stateField.setText((observableValue).getValue());
+                }
+            });
         }
     };
 
     private ChangeListener<Boolean> settableListener = new ChangeListener<Boolean>() {
         @Override
         public void changed(ObservableValue<? extends Boolean> observableValue, Boolean s, Boolean s2) {
-            parameterNewValueColumn.setEditable(observableValue.getValue());
-            sendParamButton.setVisible(observableValue.getValue());
+            Platform.runLater(new Runnable() {
+                @Override
+                public void run() {
+                    parameterNewValueColumn.setEditable(observableValue.getValue());
+                    sendParamButton.setVisible(observableValue.getValue());
+                }
+            });
         }
     };
 
     private ChangeListener<String> statusListener = new ChangeListener<String>() {
         @Override
         public void changed(ObservableValue<? extends String> observableValue, String s, String s2) {
-            statusField.setText((observableValue).getValue());
+            Platform.runLater(new Runnable() {
+                @Override
+                public void run() {
+                    statusField.setText((observableValue).getValue());
+                }
+            });
         }
     };
 
@@ -152,6 +174,7 @@ public class ControlWindow {
         this.model.getParamsSettableProperty().addListener(settableListener);
         this.model.getStatusProperty().addListener(statusListener);
         this.model.sampleTypes.addListener(sampleChangeListener);
+        refreshLogButton.setVisible(false);
     }
 
     private int getPort(String filename) throws Exception {
@@ -161,19 +184,17 @@ public class ControlWindow {
     }
 
     public void selectCommand(MouseEvent event) {
-        try {
+        if (! checkController()) return;
             log.debug("received event: " + event);
             TableView source = (TableView) event.getSource();
             int row = source.getSelectionModel().getSelectedIndex();
             ProtocolCommand command = model.commandList.get(row);
             log.debug("maybe I clicked: " + command);
             controller.execute(command.getName());
-        } catch (Exception e) {
-            //e.printStackTrace();
-        }
     }
 
     public void sendParams() {
+        if (! checkController()) return;
         log.debug("clicked send params");
         Map<String, Object> values = new HashMap<String, Object>();
         for (Parameter p: model.parameters.values()) {
@@ -198,64 +219,122 @@ public class ControlWindow {
         controller.setResource(new JSONObject(values).toString());
     }
 
-    public void getConfig() {
+    public void refreshDriverLog() {
+        File file = new File("/tmp/mi-drivers.log");
+        FileReader in = null;
+
+        try {
+            in = new FileReader(file);
+            char[] buffer = new char[4096];
+            int len;
+            driverLogArea.setText("");
+            while ((len = in.read(buffer)) != -1) {
+                String s = new String(buffer, 0, len);
+                driverLogArea.appendText(s);
+            }
+            // driverLogArea.setCaretPosition(0);
+        }
+        catch (IOException e) {
+            driverLogArea.setText(e.getClass().getName() + ": " + e.getMessage());
+        }
+        finally {
+            try {
+                if (in != null)
+                    in.close();
+            }
+            catch (IOException e) {
+                Action response = Dialogs.create()
+                        .owner(null)
+                        .title("Driver Log")
+                        .message("Unable to load driver log.")
+                        .showException(e);
+            }
+        }
+    }
+
+    public boolean loadConfig() {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Open Driver Config");
         File file = fileChooser.showOpenDialog(root.getScene().getWindow());
 
         if (file != null) {
-            boolean success = false;
-            DriverConfig config = null;
-            String error = "";
+            DriverConfig config;
+
             try {
                 config = new DriverConfig(file);
-                success = true;
-            } catch (IOException e) {
-                error = "(Unable to open the specified file)";
-            } catch (ClassCastException e) {
-                error = "(Unable to parse YAML)";
+            } catch (Exception e) {
+                Action response = Dialogs.create()
+                        .owner(null)
+                        .title("Load Configuration Exception")
+                        .message("Unable to parse configuration. Configuration must be valid yaml file.")
+                        .showException(e);
+                return false;
             }
-            if (success) {
-                model.setConfig(config);
-                console.appendText(config.toString());
-                statusField.setText("config file parsed successfully!");
-            } else {
-                Stage dialogStage = new Stage();
-                dialogStage.initModality(Modality.WINDOW_MODAL);
-                dialogStage.setScene(new Scene(VBoxBuilder.create().
-                        children(new Label("Unable to load configuration file!"), new Label(error)).
-                        alignment(Pos.CENTER).padding(new Insets(15)).build()));
-                dialogStage.show();
+
+            model.setConfig(config);
+            console.appendText(config.toString());
+            statusField.setText("config file parsed successfully!");
+        }
+        return true;
+    }
+
+    public DriverConfig getConfig() {
+        DriverConfig config = model.getConfig();
+        if (config == null) {
+            Action response = Dialogs.create()
+                    .owner(null)
+                    .title("Test Configuration")
+                    .message("Configuration has not been loaded. Load now?")
+                    .actions(Dialog.Actions.YES, Dialog.Actions.NO)
+                    .showConfirm();
+            if (response == Dialog.Actions.YES) {
+                this.loadConfig();
             }
         }
+        return model.getConfig();
+    }
+    private void missingEnvironmentVariable(String envVar) {
+        Action response = Dialogs.create()
+                .owner(null)
+                .title("Environment")
+                .message("Missing required environment variable " + envVar)
+                .showError();
     }
 
     public void launchDriver() throws IOException, InterruptedException {
         URL launch_url = getClass().getResource("/launch.py");
-        String egg_url = model.getConfig().getEggUrl();
+        DriverConfig config = this.getConfig();
+        if (config == null) return;
+
+        String egg_url = config.getEggUrl();
 
         String launch_file = launch_url.getFile();
         String path = "PATH=$PATH:" + System.getenv("PATH");
+        String virtualEnv = System.getenv("VIRTUAL_ENV");
+        if (virtualEnv == null) {
+            missingEnvironmentVariable("VIRTUAL_ENV");
+            return;
+        }
         String[] args = {path};
-        String python = "/Users/pcable/virtenvs/ooi/bin/python";
-        String working_path = "/Users/pcable/src/marine-integrations";
+        String python = virtualEnv + "/bin/python";
+        String working_path = System.getenv("TEST_BASE");
+        if (working_path == null) {
+            missingEnvironmentVariable("TEST_BASE");
+            return;
+        }
         String[] command = {python, launch_file, working_path, egg_url};
 
         Process p = Runtime.getRuntime().exec(command, args);
 
-        p.waitFor();
-        InputStream stream = p.getErrorStream();
-        String err = org.apache.commons.io.IOUtils.toString(stream);
-        log.debug(err);
+        driverUp = true;
+        driverLogArea.setText("Driver started. Click Refresh for latest log data.");
+        refreshLogButton.setVisible(true);
+        // TODO - create a thread to monitor changes to log file and update window
     }
 
     public void zmqConnect() {
         // create model and controllers
-        DriverConfig config = model.getConfig();
-        while (config == null) {
-            model.setStatus("Unable to connect to driver - must load configuration first");
-            getConfig();
-        }
+        DriverConfig config = this.getConfig();
         model.setStatus("Connecting to driver...");
         try {
             String host = config.getHost();
@@ -268,12 +347,45 @@ public class ControlWindow {
             controller.getMetadata();
             model.setStatus("Connecting to driver...complete");
         } catch (Exception e) {
-            e.printStackTrace();
+            Action response = Dialogs.create()
+                    .owner(null)
+                    .title("Driver Protocol Connection Exception")
+                    .masthead("Exception occurred when attempting to connect to the protocol driver.")
+                    .message("Unable to connect to driver. Would you like to launch the driver now?")
+                    .actions(Dialog.Actions.YES, Dialog.Actions.NO)
+                    .showConfirm();
+            if (response == Dialog.Actions.YES) {
+                try {
+                    this.launchDriver();
+                } catch (IOException | InterruptedException e1) {
+                    Action response2 = Dialogs.create()
+                            .owner(null)
+                            .title("Launch Driver")
+                            .message("Exception occurred launching driver.")
+                            .showException(e);
+                }
+            }
             model.setStatus("Connecting to driver...failed");
         }
     }
 
+    private boolean checkController() {
+        if (controller == null) {
+            Action response = Dialogs.create()
+                    .owner(null)
+                    .title("")
+                    .message("Driver not yet connected. Connect now?")
+                    .actions(Dialog.Actions.YES, Dialog.Actions.NO)
+                    .showConfirm();
+            if (response == Dialog.Actions.YES) {
+                this.zmqConnect();
+            }
+        }
+        return (controller != null);
+    }
+
     public void configure() {
+        if (! checkController()) return;
         controller.getProtocolState();
         String state = model.getState();
         if (Objects.equals(state, "DRIVER_STATE_UNCONFIGURED")) {
@@ -288,6 +400,7 @@ public class ControlWindow {
     }
 
     public void connect() {
+        if (! checkController()) return;
         controller.getProtocolState();
         String state = model.getState();
         if (Objects.equals(state, "DRIVER_STATE_DISCONNECTED")) {
@@ -298,16 +411,19 @@ public class ControlWindow {
     }
 
     public void getCapabilities() {
+        if (! checkController()) return;
         controller.getCapabilities();  // immediate action
         model.setStatus("");
     }
 
     public void getParams() {
+        if (! checkController()) return;
         model.setStatus("Getting parameters...");
         controller.getResource("DRIVER_PARAMETER_ALL");
     }
 
     public void discover() {
+        if (! checkController()) return;
         controller.getProtocolState();
         String state = model.getState();
         if (Objects.equals(state, "DRIVER_STATE_UNKNOWN")) {
@@ -318,6 +434,7 @@ public class ControlWindow {
     }
 
     public void shutdownDriver() {
+        if (! checkController()) return;
         controller.stop();
     }
 

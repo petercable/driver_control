@@ -123,7 +123,8 @@ def betterParseArgs(*args, **kwargs):
 
 def main():
     import tempfile
-    temp_dir = tempfile.mkdtemp()
+    # temp_dir = tempfile.mkdtemp()
+    temp_dir = '/tmp'
     sys.path.append(temp_dir)
     print sys.path
 

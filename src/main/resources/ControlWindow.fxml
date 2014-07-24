@@ -1,103 +1,106 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.geometry.*?>
+<?import javafx.scene.text.*?>
 <?import java.lang.*?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.control.*?>
 
-<AnchorPane fx:id="root" prefHeight="520.0" prefWidth="813.0" xmlns="http://javafx.com/javafx/8"
-            xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.raytheon.ControlWindow">
+<AnchorPane fx:id="root" prefHeight="520.0" prefWidth="813.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.raytheon.ControlWindow">
     <children>
-        <VBox prefHeight="529.0" prefWidth="813.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0"
-              AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+        <VBox prefHeight="529.0" prefWidth="813.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
             <children>
                 <MenuBar minHeight="29.0">
                     <menus>
                         <Menu mnemonicParsing="false" text="File">
                             <items>
-                                <MenuItem mnemonicParsing="false" onAction="#getConfig" text="Load Config"/>
-                                <MenuItem mnemonicParsing="false" onAction="#exit" text="Exit"/>
+                                <MenuItem mnemonicParsing="false" onAction="#getConfig" text="Load Config" />
+                                <MenuItem mnemonicParsing="false" onAction="#exit" text="Exit" />
                             </items>
                         </Menu>
                         <Menu mnemonicParsing="false" text="Driver">
                             <items>
-                                <MenuItem mnemonicParsing="false" onAction="#configure" text="Configure"/>
-                                <MenuItem mnemonicParsing="false" onAction="#getCapabilities" text="Get Capabilities"/>
-                                <MenuItem mnemonicParsing="false" onAction="#getParams" text="Get Parameters"/>
-                                <MenuItem mnemonicParsing="false" onAction="#connect" text="Connect to Instrument"/>
-                                <MenuItem mnemonicParsing="false" onAction="#discover" text="Discover"/>
-                                <MenuItem mnemonicParsing="false" onAction="#shutdownDriver" text="Shutdown"/>
+                                <MenuItem mnemonicParsing="false" onAction="#configure" text="Configure" />
+                                <MenuItem mnemonicParsing="false" onAction="#getCapabilities" text="Get Capabilities" />
+                                <MenuItem mnemonicParsing="false" onAction="#getParams" text="Get Parameters" />
+                                <MenuItem mnemonicParsing="false" onAction="#connect" text="Connect to Instrument" />
+                                <MenuItem mnemonicParsing="false" onAction="#discover" text="Discover" />
+                                <MenuItem mnemonicParsing="false" onAction="#shutdownDriver" text="Shutdown" />
                             </items>
                         </Menu>
                         <Menu mnemonicParsing="false" text="Test">
                             <items>
-                                <MenuItem mnemonicParsing="false" onAction="#launchDriver" text="Launch Driver"/>
-                                <MenuItem mnemonicParsing="false" onAction="#zmqConnect" text="Connect to Driver"/>
-                                <SeparatorMenuItem mnemonicParsing="false"/>
-                                <MenuItem mnemonicParsing="false" onAction="#validateStreams" text="Validate Streams"/>
+                                <MenuItem mnemonicParsing="false" onAction="#launchDriver" text="Launch Driver" />
+                                <MenuItem mnemonicParsing="false" onAction="#zmqConnect" text="Connect to Driver" />
+                                <SeparatorMenuItem mnemonicParsing="false" />
+                                <MenuItem mnemonicParsing="false" onAction="#validateStreams" text="Validate Streams" />
                             </items>
                         </Menu>
                         <Menu mnemonicParsing="false" text="Help">
                             <items>
-                                <MenuItem mnemonicParsing="false" onAction="#displayTestProcedures"
-                                          text="Test Procedures"/>
+                                <MenuItem mnemonicParsing="false" onAction="#displayTestProcedures" text="Test Procedures" />
                             </items>
                         </Menu>
                     </menus>
                 </MenuBar>
-                <TabPane fx:id="tabPane" minHeight="100.0" minWidth="100.0" tabClosingPolicy="UNAVAILABLE"
-                         VBox.vgrow="ALWAYS">
+                <TabPane fx:id="tabPane" minHeight="100.0" minWidth="100.0" tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS">
                     <tabs>
                         <Tab text="Commands">
                             <content>
-                                <TableView fx:id="commandTable" layoutX="14.0" layoutY="14.0" minHeight="100.0"
-                                           onMouseClicked="#selectCommand" AnchorPane.bottomAnchor="0.0"
-                                           AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0"
-                                           AnchorPane.topAnchor="0.0">
+                                <TableView fx:id="commandTable" layoutX="14.0" layoutY="14.0" minHeight="100.0" onMouseClicked="#selectCommand" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                                     <columns>
-                                        <TableColumn fx:id="commandColumn" prefWidth="300.0" text="Command"/>
-                                        <TableColumn fx:id="commandNameColumn" minWidth="0.0" prefWidth="400.0"
-                                                     text="Description"/>
+                                        <TableColumn fx:id="commandColumn" minWidth="200.0" prefWidth="300.0" text="Command" />
+                                        <TableColumn fx:id="commandNameColumn" minWidth="400.0" prefWidth="-1.0" text="Description" />
                                     </columns>
                                 </TableView>
                             </content>
                         </Tab>
                         <Tab text="Parameters">
                             <content>
-                                <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
-                                    <children>
-                                        <TableView fx:id="parameterTable" editable="true" layoutX="14.0" layoutY="14.0"
-                                                   AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0"
-                                                   AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                        <VBox>
+                           <children>
+                                        <TableView fx:id="parameterTable" editable="true" layoutX="14.0" layoutY="14.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" VBox.vgrow="ALWAYS">
                                             <columns>
-                                                <TableColumn fx:id="parameterNameColumn" prefWidth="400.0"
-                                                             text="Parameter"/>
-                                                <TableColumn fx:id="parameterValueColumn" prefWidth="150.0"
-                                                             text="Value"/>
-                                                <TableColumn fx:id="parameterNewValueColumn" prefWidth="150.0"
-                                                             text="New Value"/>
+                                                <TableColumn fx:id="parameterNameColumn" editable="false" minWidth="200.0" prefWidth="-1.0" text="Parameter" />
+                                                <TableColumn fx:id="parameterValueColumn" minWidth="20.0" prefWidth="150.0" text="Value" />
+                                                <TableColumn fx:id="parameterNewValueColumn" minWidth="20.0" prefWidth="150.0" text="New Value" />
                                             </columns>
                                         </TableView>
-                                        <Button fx:id="sendParamButton" mnemonicParsing="false"
-                                                onMouseClicked="#sendParams" text="Send" translateZ="1.0"
-                                                AnchorPane.bottomAnchor="5.0" AnchorPane.rightAnchor="25.0"/>
-                                    </children>
-                                </AnchorPane>
+                              <HBox alignment="TOP_RIGHT" VBox.vgrow="NEVER">
+                                 <children>
+                                              <Button fx:id="sendParamButton" maxHeight="-Infinity" minHeight="-Infinity" mnemonicParsing="false" onMouseClicked="#sendParams" prefHeight="26.0" text="Send" translateZ="1.0" AnchorPane.bottomAnchor="2.0" AnchorPane.rightAnchor="2.0" VBox.vgrow="NEVER" />
+                                 </children>
+                              </HBox>
+                           </children>
+                        </VBox>
                             </content>
                         </Tab>
                         <Tab text="Console">
                             <content>
-                                <TextArea fx:id="console" layoutY="-28.0" AnchorPane.bottomAnchor="0.0"
-                                          AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0"
-                                          AnchorPane.topAnchor="0.0"/>
+                                <TextArea fx:id="console" layoutY="-28.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
                             </content>
                         </Tab>
+                  <Tab text="Driver Log">
+                     <content>
+                        <VBox>
+                           <children>
+                              <TextArea fx:id="driverLogArea" editable="false" prefHeight="407.0" prefWidth="813.0" text="Driver has not yet been started." wrapText="true" AnchorPane.bottomAnchor="25.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" VBox.vgrow="ALWAYS">
+                        </TextArea>
+                              <HBox alignment="TOP_RIGHT" layoutX="746.0" VBox.vgrow="NEVER">
+                                 <children>
+                                    <Button fx:id="refreshLogButton" maxHeight="-Infinity" minHeight="-Infinity" mnemonicParsing="false" onMouseClicked="#refreshDriverLog" prefHeight="26.0" text="Refresh" AnchorPane.bottomAnchor="2.0" AnchorPane.rightAnchor="2.0" HBox.hgrow="NEVER" />
+                                 </children>
+                              </HBox>
+                           </children>
+                        </VBox>
+                     </content>
+                  </Tab>
                     </tabs>
                 </TabPane>
                 <HBox minHeight="26.0">
                     <children>
-                        <TextField fx:id="stateField" editable="false" minHeight="26.0" prefHeight="26.0"
-                                   prefWidth="238.0" HBox.hgrow="NEVER"/>
-                        <TextField fx:id="statusField" editable="false" GridPane.columnIndex="1" HBox.hgrow="ALWAYS"/>
+                        <TextField fx:id="stateField" editable="false" minHeight="26.0" prefHeight="26.0" prefWidth="238.0" HBox.hgrow="NEVER" />
+                        <TextField fx:id="statusField" editable="false" GridPane.columnIndex="1" HBox.hgrow="ALWAYS" />
                     </children>
                 </HBox>
             </children>
