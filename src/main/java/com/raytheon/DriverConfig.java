@@ -7,9 +7,6 @@ import org.yaml.snakeyaml.Yaml;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -23,6 +20,7 @@ public class DriverConfig {
     private String commandPortFile;
     private String eventPortFile;
     private String host;
+    private String databaseFile;
 
     public DriverConfig(File file) throws IOException {
         // open the file, parse the config
@@ -38,6 +36,7 @@ public class DriverConfig {
         commandPortFile = driverConfig.getString("command_port_file");
         eventPortFile = driverConfig.getString("event_port_file");
         host = driverConfig.getString("driver_host");
+        databaseFile = driverConfig.getString("database_file");
     }
 
     public String getPortAgentConfig() {
@@ -77,5 +76,9 @@ public class DriverConfig {
 
     public String getHost() {
         return host;
+    }
+
+    public String getDatabaseFile() {
+        return databaseFile;
     }
 }

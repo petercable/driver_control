@@ -21,7 +21,7 @@ public class DriverControl {
         ZContext context = new ZContext();
         command_socket = context.createSocket(ZMQ.REQ);
         command_socket.connect(url);
-        log.debug("Command socket connected! (" + url + ")");
+        log.debug("Command socket connected! ({})", url);
     }
 
     protected void ping() {
@@ -99,15 +99,15 @@ public class DriverControl {
                     reply = msg.popString();
                     break;
                 }
-                try { Thread.sleep(100); } catch (InterruptedException e1) { }
+                try { Thread.sleep(100); } catch (InterruptedException ignored) { }
             }
 
             if (reply != null) {
-                log.debug("received reply: " + reply);
+                log.debug("received reply: {}", reply);
                 if (reply.startsWith("[")) {
                     JSONArray possibleException = new JSONArray(reply);
                     if (possibleException.length() == 3) {
-                        log.error("EXCEPTION FROM DRIVER: " + possibleException);
+                        log.error("EXCEPTION FROM DRIVER: {}", possibleException);
                         return null;
                     }
                 }
@@ -136,7 +136,7 @@ public class DriverControl {
         message.put("cmd", command);
         message.put("args", message_args);
         message.put("kwargs", keyword_args);
-        log.debug("BUILT COMMAND: " + message);
+        log.debug("BUILT COMMAND: {}", message);
         return message;
     }
 }

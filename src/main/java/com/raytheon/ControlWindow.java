@@ -4,10 +4,9 @@ import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.ListChangeListener;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
-import javafx.geometry.Insets;
-import javafx.geometry.Pos;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.MapValueFactory;
@@ -15,9 +14,7 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
-import javafx.scene.layout.VBoxBuilder;
 import javafx.stage.FileChooser;
-import javafx.stage.Modality;
 import javafx.stage.Stage;
 import org.apache.logging.log4j.LogManager;
 import org.controlsfx.control.action.Action;
@@ -32,6 +29,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.sql.SQLException;
 import java.util.*;
 
 public class ControlWindow {
@@ -69,103 +67,79 @@ public class ControlWindow {
     private DriverModel model = new DriverModel();
     private DriverControl controller;
     protected EventListener listener;
+    private PreloadDatabase preload;
     private static org.apache.logging.log4j.Logger log = LogManager.getLogger();
-
-    private boolean driverUp = false;
 
     // Listeners
     private ChangeListener<String> stateListener = new ChangeListener<String>() {
         @Override
         public void changed(ObservableValue<? extends String> observableValue, String s, String s2) {
-            Platform.runLater(new Runnable() {
-                @Override
-                public void run() {
-                    stateField.setText((observableValue).getValue());
-                }
-            });
+            Platform.runLater(() -> stateField.setText((observableValue).getValue()));
         }
     };
 
     private ChangeListener<Boolean> settableListener = new ChangeListener<Boolean>() {
         @Override
         public void changed(ObservableValue<? extends Boolean> observableValue, Boolean s, Boolean s2) {
-            Platform.runLater(new Runnable() {
-                @Override
-                public void run() {
+            Platform.runLater(() -> {
                     parameterNewValueColumn.setEditable(observableValue.getValue());
                     sendParamButton.setVisible(observableValue.getValue());
-                }
-            });
+                });
         }
     };
 
     private ChangeListener<String> statusListener = new ChangeListener<String>() {
         @Override
         public void changed(ObservableValue<? extends String> observableValue, String s, String s2) {
-            Platform.runLater(new Runnable() {
-                @Override
-                public void run() {
-                    statusField.setText((observableValue).getValue());
-                }
-            });
+            Platform.runLater(() -> statusField.setText((observableValue).getValue()));
         }
     };
 
     private ListChangeListener<String> sampleChangeListener = new ListChangeListener<String>() {
         @Override
         public void onChanged(final Change<? extends String> change) {
-            Platform.runLater(new Runnable() {
-                @Override
-                public void run() {
-                    while (change.next()) {
-                        for (String sample : change.getAddedSubList()) {
-                            log.debug("added sample type: " + sample);
-                            // new sample type detected
-                            // create a new tab
-                            Tab tab = new Tab(sample);
-                            tabPane.getTabs().add(tab);
+            Platform.runLater(() -> {
+                while (change.next()) {
+                    for (String sample : change.getAddedSubList()) {
+                        log.debug("added sample type: " + sample);
+                        // new sample type detected
+                        // create a new tab
+                        Tab tab = new Tab(sample);
+                        tabPane.getTabs().add(tab);
 
-                            // create a tableview, add it to the tab
-                            TableView<Map<String, Object>> tableView = new TableView<Map<String, Object>>(model.sampleLists.get(sample));
-                            tab.setContent(tableView);
+                        // create a tableview, add it to the tab
+                        TableView<Map<String, Object>> tableView = new TableView<>(model.sampleLists.get(sample));
+                        tab.setContent(tableView);
 
-                            // grab a sample, use it to find the columns and populate
-                            // the tableview...
-                            Map<String, Object> oneSample = model.sampleLists.get(sample).get(0);
-                            List<String> keys = new ArrayList<String>(oneSample.keySet());
-                            Collections.sort(keys);
-                            for (String key: keys) {
-                                TableColumn<Map<String, Object>, String> column = new TableColumn<Map<String, Object>, String>(key);
-                                column.setCellValueFactory(new MapValueFactory(key));
-                                column.setPrefWidth(50.0);
-                                tableView.getColumns().add(column);
-                            }
+                        // grab a sample, use it to find the columns and populate
+                        // the tableview...
+                        Map<String, Object> oneSample = model.sampleLists.get(sample).get(0);
+                        List<String> keys = new ArrayList<>(oneSample.keySet());
+                        Collections.sort(keys);
+                        for (String key: keys) {
+                            TableColumn<Map<String, Object>, String> column = new TableColumn<>(key);
+                            column.setCellValueFactory(new MapValueFactory(key));
+                            column.setPrefWidth(50.0);
+                            tableView.getColumns().add(column);
                         }
                     }
                 }
             });
         }
     };
-    private String driverPath;
 
     @FXML
     private void initialize() {
-        commandColumn.setCellValueFactory(new PropertyValueFactory<ProtocolCommand, String>("name"));
-        commandNameColumn.setCellValueFactory(new PropertyValueFactory<ProtocolCommand, String>("displayName"));
+        commandColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
+        commandNameColumn.setCellValueFactory(new PropertyValueFactory<>("displayName"));
 
-        parameterNameColumn.setCellValueFactory(new PropertyValueFactory<Parameter, String>("displayName"));
-        parameterValueColumn.setCellValueFactory(new PropertyValueFactory<Parameter, String>("value"));
-        parameterNewValueColumn.setCellValueFactory(new PropertyValueFactory<Parameter, String>("newValue"));
+        parameterNameColumn.setCellValueFactory(new PropertyValueFactory<>("displayName"));
+        parameterValueColumn.setCellValueFactory(new PropertyValueFactory<>("value"));
+        parameterNewValueColumn.setCellValueFactory(new PropertyValueFactory<>("newValue"));
         parameterNewValueColumn.setCellFactory(TextFieldTableCell.<Parameter>forTableColumn());
 
         parameterNewValueColumn.setOnEditCommit(
-                new EventHandler<TableColumn.CellEditEvent<Parameter, String>>() {
-                    @Override
-                    public void handle(TableColumn.CellEditEvent<Parameter, String> t) {
-                        log.debug("setOnEditCommit");
-                        t.getTableView().getItems().get(t.getTablePosition().getRow()).setNewValue(t.getNewValue());
-                    }
-                }
+                t -> t.getTableView().getItems().get(t.getTablePosition().getRow()).setNewValue(t.getNewValue())
         );
 
         commandTable.setItems(model.commandList);
@@ -196,7 +170,7 @@ public class ControlWindow {
     public void sendParams() {
         if (! checkController()) return;
         log.debug("clicked send params");
-        Map<String, Object> values = new HashMap<String, Object>();
+        Map<String, Object> values = new HashMap<>();
         for (Parameter p: model.parameters.values()) {
             Object sendValue;
             String newValue = p.getNewValue();
@@ -204,12 +178,16 @@ public class ControlWindow {
             if (newValue.equals("")) continue;
             if (newValue.equals(oldValue)) continue;
             String type = p.getValueType();
-            if (type.equals("int")) {
-                sendValue = Integer.parseInt(newValue);
-            } else if (type.equals("float")) {
-                sendValue = Double.parseDouble(newValue);
-            } else {
-                sendValue = newValue;
+            switch (type) {
+                case "int":
+                    sendValue = Integer.parseInt(newValue);
+                    break;
+                case "float":
+                    sendValue = Double.parseDouble(newValue);
+                    break;
+                default:
+                    sendValue = newValue;
+                    break;
             }
             values.put(p.getName(), sendValue);
         }
@@ -221,10 +199,8 @@ public class ControlWindow {
 
     public void refreshDriverLog() {
         File file = new File("/tmp/mi-drivers.log");
-        FileReader in = null;
 
-        try {
-            in = new FileReader(file);
+        try (FileReader in=new FileReader(file)) {
             char[] buffer = new char[4096];
             int len;
             driverLogArea.setText("");
@@ -236,19 +212,11 @@ public class ControlWindow {
         }
         catch (IOException e) {
             driverLogArea.setText(e.getClass().getName() + ": " + e.getMessage());
-        }
-        finally {
-            try {
-                if (in != null)
-                    in.close();
-            }
-            catch (IOException e) {
-                Action response = Dialogs.create()
-                        .owner(null)
-                        .title("Driver Log")
-                        .message("Unable to load driver log.")
-                        .showException(e);
-            }
+            Dialogs.create()
+                    .owner(null)
+                    .title("Driver Log")
+                    .message("Unable to load driver log.")
+                    .showException(e);
         }
     }
 
@@ -262,8 +230,8 @@ public class ControlWindow {
 
             try {
                 config = new DriverConfig(file);
-            } catch (Exception e) {
-                Action response = Dialogs.create()
+            } catch (IOException e) {
+                Dialogs.create()
                         .owner(null)
                         .title("Load Configuration Exception")
                         .message("Unable to parse configuration. Configuration must be valid yaml file.")
@@ -273,6 +241,16 @@ public class ControlWindow {
 
             model.setConfig(config);
             console.appendText(config.toString());
+            try {
+                preload = new PreloadDatabase(SqliteConnectionFactory.getConnection(config.getDatabaseFile()));
+            } catch (SQLException | ClassNotFoundException e) {
+                Dialogs.create()
+                        .owner(null)
+                        .title("Preload Database")
+                        .message("Exception connecting to preload DB.")
+                        .showException(e);
+
+            }
             statusField.setText("config file parsed successfully!");
         }
         return true;
@@ -294,7 +272,7 @@ public class ControlWindow {
         return model.getConfig();
     }
     private void missingEnvironmentVariable(String envVar) {
-        Action response = Dialogs.create()
+        Dialogs.create()
                 .owner(null)
                 .title("Environment")
                 .message("Missing required environment variable " + envVar)
@@ -324,9 +302,8 @@ public class ControlWindow {
         }
         String[] command = {python, launch_file, working_path, egg_url};
 
-        Process p = Runtime.getRuntime().exec(command, args);
+        Runtime.getRuntime().exec(command, args);
 
-        driverUp = true;
         driverLogArea.setText("Driver started. Click Refresh for latest log data.");
         refreshLogButton.setVisible(true);
         // TODO - create a thread to monitor changes to log file and update window
@@ -358,7 +335,7 @@ public class ControlWindow {
                 try {
                     this.launchDriver();
                 } catch (IOException | InterruptedException e1) {
-                    Action response2 = Dialogs.create()
+                    Dialogs.create()
                             .owner(null)
                             .title("Launch Driver")
                             .message("Exception occurred launching driver.")
@@ -439,15 +416,24 @@ public class ControlWindow {
     }
 
     public void validateStreams() {
-        model.setStatus("Pete is too lazy to implement this.");
-        /// get preload URL from user
-        /// make sure we have a data stream capture from driver
-        /// prompt user to select data stream name from list
-        /// compare data stream fields with those listed in preload
+        preload.getParameter("PD190");
     }
 
     public void displayTestProcedures() {
-        log.debug("Dan hasn't figured out how to create another window in Scene Builder, but Pete will in two seconds...");
+        // needs controller?  load instructions?
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/HelpWindow.fxml"));
+        Parent root = null;
+        try {
+            root = (Parent) loader.load();
+            Scene scene = new Scene(root, 800, 600);
+            Stage stage = new Stage();
+            stage.setTitle("Help");
+            stage.setScene(scene);
+            stage.show();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
     }
 
     public void exit() {
