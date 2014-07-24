@@ -62,6 +62,8 @@ public class DriverControl {
 
     protected void execute(String command) {
         sendCommand(buildCommand(DriverCommandEnum.EXECUTE_RESOURCE, command));
+        model.setStatus("sent command " + command);
+        getCapabilities();
     }
 
     protected void getProtocolState() {

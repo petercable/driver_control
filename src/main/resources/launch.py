@@ -14,7 +14,6 @@ import shutil
 import docopt
 import zipfile
 
-
 eggs = [
     'APScheduler-2.1.0-py2.7.egg',
     'ntplib-0.3.2-py2.7.egg',
@@ -125,7 +124,8 @@ def betterParseArgs(*args, **kwargs):
 def main():
     import tempfile
     temp_dir = tempfile.mkdtemp()
-    print temp_dir
+    sys.path.append(temp_dir)
+    print sys.path
 
     args = docopt.docopt(__doc__, version='egg trebuchet 0.1')
 

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import java.lang.*?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.control.*?>
 
@@ -11,11 +12,14 @@
             <children>
                 <MenuBar minHeight="29.0">
                     <menus>
-                        <Menu mnemonicParsing="false" text="Driver">
+                        <Menu mnemonicParsing="false" text="File">
                             <items>
                                 <MenuItem mnemonicParsing="false" onAction="#getConfig" text="Load Config"/>
-                                <MenuItem mnemonicParsing="false" onAction="#launchDriver" text="Launch Driver"/>
-                                <MenuItem mnemonicParsing="false" onAction="#zmqConnect" text="Connect to Driver"/>
+                                <MenuItem mnemonicParsing="false" onAction="#exit" text="Exit"/>
+                            </items>
+                        </Menu>
+                        <Menu mnemonicParsing="false" text="Driver">
+                            <items>
                                 <MenuItem mnemonicParsing="false" onAction="#configure" text="Configure"/>
                                 <MenuItem mnemonicParsing="false" onAction="#getCapabilities" text="Get Capabilities"/>
                                 <MenuItem mnemonicParsing="false" onAction="#getParams" text="Get Parameters"/>
@@ -26,6 +30,9 @@
                         </Menu>
                         <Menu mnemonicParsing="false" text="Test">
                             <items>
+                                <MenuItem mnemonicParsing="false" onAction="#launchDriver" text="Launch Driver"/>
+                                <MenuItem mnemonicParsing="false" onAction="#zmqConnect" text="Connect to Driver"/>
+                                <SeparatorMenuItem mnemonicParsing="false"/>
                                 <MenuItem mnemonicParsing="false" onAction="#validateStreams" text="Validate Streams"/>
                             </items>
                         </Menu>
