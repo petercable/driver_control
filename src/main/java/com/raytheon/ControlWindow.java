@@ -24,8 +24,7 @@ import org.json.JSONObject;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
+import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -235,25 +234,19 @@ public class ControlWindow {
         URL launch_url = getClass().getResource("/launch.py");
         String egg_url = model.getConfig().getEggUrl();
 
-        /// build command to exec:
-        /// cd ~/Workspace/eggs/thsph/
-        /// ./launch_driver --event_port_file=/tmp/event_port --command_port_file=/tmp/command_port
-        if (this.driverPath == null)
-        {
-            //user prompt "Enter path to driver launch script"
-            this.driverPath = "~/Workspace/eggs/thsph";
-        }
         String launch_file = launch_url.getFile();
-        String python = "/Users/danmergens/virtenvs/ooi/bin/python";
-        String working_path = "/Users/danmergens/Workspace/code/marine-integrations";
-        String command = "workon ooi; " + python + " " + launch_file + " " + working_path + " " + egg_url;
+        String path = "PATH=$PATH:" + System.getenv("PATH");
+        String[] args = {path};
+        String python = "/Users/pcable/virtenvs/ooi/bin/python";
+        String working_path = "/Users/pcable/src/marine-integrations";
+        String[] command = {python, launch_file, working_path, egg_url};
 
-        log.debug("python: " + python);
-        log.debug("launch file: " + launch_file);
-        log.debug("launch file: " + launch_file);
-        log.debug("command: " + command);
+        Process p = Runtime.getRuntime().exec(command, args);
 
-        Runtime.getRuntime().exec(command);
+        p.waitFor();
+        InputStream stream = p.getErrorStream();
+        String err = org.apache.commons.io.IOUtils.toString(stream);
+        log.debug(err);
     }
 
     public void zmqConnect() {
