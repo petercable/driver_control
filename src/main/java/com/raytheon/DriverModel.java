@@ -22,6 +22,7 @@ public class DriverModel {
     private SimpleStringProperty state = new SimpleStringProperty();
     private SimpleBooleanProperty paramsSettable = new SimpleBooleanProperty();
     private DriverConfig config;
+    private SimpleStringProperty status = new SimpleStringProperty();
 
     public DriverModel() {
         log.debug("Created driver model");
@@ -102,11 +103,9 @@ public class DriverModel {
     }
 
     public void setState(String state) {
-        log.debug("Received setState: " + state);
-        if (state.startsWith("[")) {
-            state = new JSONArray(state).getString(0);
+        if (state != null) {
+            this.state.set(state);
         }
-        this.state.set(state);
     }
 
     public SimpleStringProperty getStateProperty() {
@@ -164,4 +163,15 @@ public class DriverModel {
         return config;
     }
 
+    public String getStatus() {
+        return status.get();
+    }
+
+    public void setStatus(String status) {
+        this.status.set(status);
+    }
+
+    public SimpleStringProperty getStatusProperty() {
+        return status;
+    }
 }

@@ -24,7 +24,9 @@ import org.json.JSONObject;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -61,7 +63,7 @@ public class ControlWindow {
 
     private DriverModel model = new DriverModel();
     private DriverControl controller;
-    private EventListener listener;
+    protected EventListener listener;
     private static org.apache.logging.log4j.Logger log = LogManager.getLogger();
 
     // Listeners
@@ -78,6 +80,13 @@ public class ControlWindow {
         public void changed(ObservableValue<? extends Boolean> observableValue, Boolean s, Boolean s2) {
             parameterNewValueColumn.setEditable(observableValue.getValue());
             sendParamButton.setVisible(observableValue.getValue());
+        }
+    };
+
+    private ChangeListener<String> statusListener = new ChangeListener<String>() {
+        @Override
+        public void changed(ObservableValue<? extends String> observableValue, String s, String s2) {
+            statusField.setText((observableValue).getValue());
         }
     };
 
@@ -142,6 +151,7 @@ public class ControlWindow {
         parameterTable.setItems(model.paramList);
         this.model.getStateProperty().addListener(stateListener);
         this.model.getParamsSettableProperty().addListener(settableListener);
+        this.model.getStatusProperty().addListener(statusListener);
         this.model.sampleTypes.addListener(sampleChangeListener);
     }
 
@@ -203,8 +213,6 @@ public class ControlWindow {
                 success = true;
             } catch (IOException e) {
                 error = "(Unable to open the specified file)";
-            } catch (URISyntaxException e) {
-                error = "(Unable to parse egg URL)";
             } catch (ClassCastException e) {
                 error = "(Unable to parse YAML)";
             }
@@ -224,6 +232,9 @@ public class ControlWindow {
     }
 
     public void launchDriver() throws IOException, InterruptedException {
+        URL launch_url = getClass().getResource("/launch.py");
+        String egg_url = model.getConfig().getEggUrl();
+
         /// build command to exec:
         /// cd ~/Workspace/eggs/thsph/
         /// ./launch_driver --event_port_file=/tmp/event_port --command_port_file=/tmp/command_port
@@ -232,63 +243,84 @@ public class ControlWindow {
             //user prompt "Enter path to driver launch script"
             this.driverPath = "~/Workspace/eggs/thsph";
         }
-        Process p = Runtime.getRuntime().exec("cd " + this.driverPath);
+        String launch_file = launch_url.getFile();
+        String python = "/Users/danmergens/virtenvs/ooi/bin/python";
+        String working_path = "/Users/danmergens/Workspace/code/marine-integrations";
+        String command = "workon ooi; " + python + " " + launch_file + " " + working_path + " " + egg_url;
 
-        Runtime.getRuntime().exec("./launch_driver --event_port_file=/tmp/event_port --command_port_file=/tmp/command_port");
+        log.debug("python: " + python);
+        log.debug("launch file: " + launch_file);
+        log.debug("launch file: " + launch_file);
+        log.debug("command: " + command);
+
+        Runtime.getRuntime().exec(command);
     }
 
     public void zmqConnect() {
         // create model and controllers
         DriverConfig config = model.getConfig();
-        if (config != null) {
-            try {
-                String host = config.getHost();
-                int eventPort = getPort(config.getEventPortFile());
-                int commandPort = getPort(config.getCommandPortFile());
-                controller = new DriverControl(host, commandPort, model);
-                listener = new EventListener(host, eventPort, model, controller);
-                listener.start();
-                controller.getProtocolState();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+        while (config == null) {
+            model.setStatus("Unable to connect to driver - must load configuration first");
+            getConfig();
+        }
+        model.setStatus("Connecting to driver...");
+        try {
+            String host = config.getHost();
+            int eventPort = getPort(config.getEventPortFile());
+            int commandPort = getPort(config.getCommandPortFile());
+            controller = new DriverControl(host, commandPort, model);
+            listener = new EventListener(host, eventPort, model, controller);
+            listener.start();
+            controller.getProtocolState();
+            controller.getMetadata();
+            model.setStatus("Connecting to driver...complete");
+        } catch (Exception e) {
+            e.printStackTrace();
+            model.setStatus("Connecting to driver...failed");
         }
     }
 
     public void configure() {
         controller.getProtocolState();
         String state = model.getState();
-        log.debug("Called configure.  Current state: " + state + " Configuration: " + model.getConfig());
         if (Objects.equals(state, "DRIVER_STATE_UNCONFIGURED")) {
+            model.setStatus("Configuring driver...");
             controller.configure();
             controller.init();
-            controller.getMetadata();
+            model.setStatus("Configuration complete.");
+        }
+        else {
+            model.setStatus("Configuration already complete.");
         }
     }
 
     public void connect() {
         controller.getProtocolState();
         String state = model.getState();
-        log.debug("Called connect.  Current state: " + state);
         if (Objects.equals(state, "DRIVER_STATE_DISCONNECTED")) {
+            model.setStatus("Connecting to instrument...");
             controller.connect();
+            model.setStatus("Connecting to instrument...done");
         }
     }
 
     public void getCapabilities() {
-        controller.getCapabilities();
+        controller.getCapabilities();  // immediate action
+        model.setStatus("");
     }
 
     public void getParams() {
+        model.setStatus("Getting parameters...");
         controller.getResource("DRIVER_PARAMETER_ALL");
     }
 
     public void discover() {
         controller.getProtocolState();
         String state = model.getState();
-        log.debug("Called discover.  Current state: " + state);
         if (Objects.equals(state, "DRIVER_STATE_UNKNOWN")) {
+            model.setStatus("Discovering protocol state...");
             controller.discover();
+            model.setStatus("Discovering protocol state...done");
         }
     }
 
@@ -297,7 +329,7 @@ public class ControlWindow {
     }
 
     public void validateStreams() {
-        log.debug("Pete is too lazy to implement this.");
+        model.setStatus("Pete is too lazy to implement this.");
         /// get preload URL from user
         /// make sure we have a data stream capture from driver
         /// prompt user to select data stream name from list
@@ -306,5 +338,9 @@ public class ControlWindow {
 
     public void displayTestProcedures() {
         log.debug("Dan hasn't figured out how to create another window in Scene Builder, but Pete will in two seconds...");
+    }
+
+    public void exit() {
+        ((Stage)root.getScene().getWindow()).close();
     }
 }

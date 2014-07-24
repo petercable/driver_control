@@ -9,6 +9,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -18,12 +19,12 @@ public class DriverConfig {
     private static Logger log = LogManager.getLogger();
     private JSONObject portAgentConfig;
     private JSONObject startupConfig;
-    private URI eggUrl;
+    private String eggUrl;
     private String commandPortFile;
     private String eventPortFile;
     private String host;
 
-    public DriverConfig(File file) throws IOException, URISyntaxException {
+    public DriverConfig(File file) throws IOException {
         // open the file, parse the config
         Path path = Paths.get(file.toURI());
         Yaml yaml = new Yaml();
@@ -33,7 +34,7 @@ public class DriverConfig {
         portAgentConfig = config.getJSONObject("port_agent_config");
         startupConfig = config.getJSONObject("startup_config");
         JSONObject driverConfig = config.getJSONObject("driver_config");
-        eggUrl = new URI(driverConfig.getString("egg_url"));
+        eggUrl = driverConfig.getString("egg_url");
         commandPortFile = driverConfig.getString("command_port_file");
         eventPortFile = driverConfig.getString("event_port_file");
         host = driverConfig.getString("driver_host");
@@ -47,7 +48,7 @@ public class DriverConfig {
         return startupConfig.toString();
     }
 
-    public URI getEggUri() throws URISyntaxException {
+    public String getEggUrl() {
         return eggUrl;
     }
 
@@ -66,7 +67,7 @@ public class DriverConfig {
         sb.append("\n\nSTARTUP CONFIG\n\n");
         sb.append(startupConfig.toString(2));
         sb.append("\n\nEGG URL: ");
-        sb.append(eggUrl.toString());
+        sb.append(eggUrl);
         sb.append("\nCOMMAND PORT FILE: ");
         sb.append(commandPortFile);
         sb.append("\nEVENT PORT FILE: ");
