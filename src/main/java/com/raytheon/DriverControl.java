@@ -1,5 +1,6 @@
 package com.raytheon;
 
+import javafx.application.Platform;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
@@ -9,12 +10,19 @@ import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMsg;
 
+import java.lang.reflect.Executable;
 import java.time.Instant;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 public class DriverControl {
     private final ZMQ.Socket command_socket;
     private static Logger log = LogManager.getLogger();
     private DriverModel model;
+    private volatile boolean isCommanding = false;
+    private ExecutorService executor = Executors.newSingleThreadExecutor();
 
     public DriverControl(String host, int port, DriverModel model) {
         this.model = model;
@@ -26,101 +34,128 @@ public class DriverControl {
         log.debug("Command socket connected! ({})", url);
     }
 
-    protected void ping() {
-        sendCommand(buildCommand(DriverCommandEnum.PING, "ping from java"), 30);
+    protected Future<String> ping() {
+        return sendCommand(DriverCommandEnum.PING, 30, "ping from java");
     }
 
-    protected void configure() {
-        sendCommand(buildCommand(DriverCommandEnum.CONFIGURE, model.getConfig().getPortAgentConfig()));
+    protected Future<String> configure() {
+        return sendCommand(DriverCommandEnum.CONFIGURE, model.getConfig().getPortAgentConfig());
     }
 
-    protected void init() {
-        sendCommand(buildCommand(DriverCommandEnum.SET_INIT_PARAMS, model.getConfig().getStartupConfig()));
+    protected Future<String> init() {
+        return sendCommand(DriverCommandEnum.SET_INIT_PARAMS, model.getConfig().getStartupConfig());
     }
 
-    protected void connect() {
-        sendCommand(buildCommand(DriverCommandEnum.CONNECT));
+    protected Future<String> connect() {
+        return sendCommand(DriverCommandEnum.CONNECT);
     }
 
-    protected void discover() {
-        sendCommand(buildCommand(DriverCommandEnum.DISCOVER_STATE));
+    protected Future<String> discover() {
+        return sendCommand(DriverCommandEnum.DISCOVER_STATE);
     }
 
-    protected void stop() {
-        sendCommand(buildCommand(DriverCommandEnum.STOP_DRIVER));
+    protected Future<String> stop() {
+        return sendCommand(DriverCommandEnum.STOP_DRIVER);
     }
 
-    protected void getMetadata() {
-        String reply = sendCommand(buildCommand(DriverCommandEnum.GET_CONFIG_METADATA));
-        reply = reply.replace("\\\"", "\"");
-        model.parseMetadata(new JSONObject(reply));
+    protected Future<String> getMetadata() {
+        return sendCommand(DriverCommandEnum.GET_CONFIG_METADATA);
     }
 
-    protected void getCapabilities() {
-        String reply = sendCommand(buildCommand(DriverCommandEnum.GET_CAPABILITIES));
-        JSONArray capes = new JSONArray(reply).getJSONArray(0);
-        model.parseCapabilities(capes);
+    protected Future<String> getCapabilities() {
+        return sendCommand(DriverCommandEnum.GET_CAPABILITIES);
     }
 
-    protected void execute(String command) {
-        sendCommand(buildCommand(DriverCommandEnum.EXECUTE_RESOURCE, command));
-        model.setStatus("sent command " + command);
-        getCapabilities();
+    protected Future<String> execute(String command) {
+        return sendCommand(DriverCommandEnum.EXECUTE_RESOURCE, command);
     }
 
-    protected void getProtocolState() {
-        String state = sendCommand(buildCommand(DriverCommandEnum.GET_RESOURCE_STATE), 5);
-        model.setState(state);
+    protected Future<String> getProtocolState() {
+        return sendCommand(DriverCommandEnum.GET_RESOURCE_STATE, 5);
     }
 
-    protected void getResource(String... resources) {
-        String reply = sendCommand(buildCommand(DriverCommandEnum.GET_RESOURCE, resources));
-        if (reply != null) {
-            model.setParams(new JSONObject(reply));
-        }
+    protected Future<String> getResource(String... resources) {
+        return sendCommand(DriverCommandEnum.GET_RESOURCE, resources);
     }
 
-    protected void setResource(String parameters) {
-        sendCommand(buildCommand(DriverCommandEnum.SET_RESOURCE, parameters));
+    protected Future<String> setResource(String parameters) {
+        return sendCommand(DriverCommandEnum.SET_RESOURCE, parameters);
     }
 
-    private String sendCommand(JSONObject command) {
-        return sendCommand(command, 600);
-    }
+    private String _sendCommand(DriverCommandEnum command, long timeout, String... args) {
+        Platform.runLater(()->model.setStatus("sending command " + command.toString() + "..."));
+        command_socket.send(buildCommand(command, args).toString());
+        String reply = null;
 
-    private String sendCommand(JSONObject command, long timeout) {
-        synchronized (command_socket) {
-            command_socket.send(command.toString());
-            String reply = null;
-
-            // loop on the command socket for a response
-            Instant endTime = Instant.now().plusSeconds(timeout);
-            while (Instant.now().isBefore(endTime)) {
-                ZMsg msg = ZMsg.recvMsg(command_socket, ZMQ.NOBLOCK);
-                if (msg != null) {
-                    reply = msg.popString();
-                    break;
-                }
-                try { Thread.sleep(100); } catch (InterruptedException ignored) { }
+        // loop on the command socket for a response
+        Instant endTime = Instant.now().plusSeconds(timeout);
+        while (Instant.now().isBefore(endTime)) {
+            ZMsg msg = ZMsg.recvMsg(command_socket, ZMQ.NOBLOCK);
+            if (msg != null) {
+                reply = msg.popString();
+                break;
             }
+            try { Thread.sleep(100); } catch (InterruptedException ignored) { }
+        }
 
-            if (reply != null) {
-                log.debug("received reply: {}", reply);
-                if (reply.startsWith("[")) {
-                    JSONArray possibleException = new JSONArray(reply);
-                    if (possibleException.length() == 3) {
-                        log.error("EXCEPTION FROM DRIVER: {}", possibleException);
-                        return null;
-                    }
+        if (reply != null) {
+            log.debug("received reply: {}", reply);
+            if (reply.startsWith("[")) {
+                JSONArray possibleException = new JSONArray(reply);
+                if (possibleException.length() == 3) {
+                    log.error("EXCEPTION FROM DRIVER: {}", possibleException);
                 }
+            }
+            else {
                 if (reply.startsWith("\"")) {
                     reply = reply.substring(1, reply.length() - 1);
                 }
-            } else {
-                log.debug("no reply received!");
+                switch(command) {
+                    case GET_CONFIG_METADATA:
+                        final JSONObject metaData = new JSONObject(reply.replace("\\\"", "\""));
+                        Platform.runLater(()->model.parseMetadata(metaData));
+                        break;
+                    case GET_CAPABILITIES:
+                        final JSONArray capes = new JSONArray(reply).getJSONArray(0);
+                        Platform.runLater(() -> model.parseCapabilities(capes));
+                        break;
+                    case GET_RESOURCE_STATE:
+                        final String state = reply;
+                        Platform.runLater(() -> model.setState(state));
+                        break;
+                    case GET_RESOURCE:
+                        final JSONObject resource = new JSONObject(reply);
+                        Platform.runLater(() -> model.setParams(resource));
+                        break;
+                    default:
+                        break;
+                }
             }
-            return reply;
+        } else {
+            log.debug("no reply received!");
         }
+        log.debug(reply);
+        isCommanding = false;
+
+        return reply;
+    }
+
+    private Future<String> sendCommand(DriverCommandEnum command, String... args) {
+        return sendCommand(command, 600, args);
+    }
+
+    private Future<String> sendCommand(DriverCommandEnum command, long timeout, String... args) {
+        log.debug("sending command to driver {}", command);
+        if (isCommanding) {
+            Platform.runLater(() -> model.setStatus(String.format(
+                    "unable to send command %s while processing previous command",
+                    command.toString())));
+            return executor.submit(()-> "busy processing previous command");
+        }
+
+        isCommanding = true;
+        return executor.submit(()->this._sendCommand(command, timeout, args));
+        //new Thread(()->this._sendCommand(command, timeout, args)).start();
     }
 
     private JSONObject buildCommand(DriverCommandEnum command, String... args) {

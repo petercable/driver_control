@@ -31,6 +31,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
 
 public class ControlWindow {
     @FXML AnchorPane root;
@@ -294,8 +295,8 @@ public class ControlWindow {
             controller = new DriverControl(host, commandPort, model);
             listener = new EventListener(host, eventPort, model, controller);
             listener.start();
-            controller.getProtocolState();
-            controller.getMetadata();
+            controller.getProtocolState().get();
+            controller.getMetadata().get();
             model.setStatus("Connecting to driver...complete");
         } catch (Exception e) {
             Action response = Dialogs.create()
@@ -337,27 +338,35 @@ public class ControlWindow {
 
     public void configure() {
         if (! checkController()) return;
-        controller.getProtocolState();
-        String state = model.getState();
-        if (Objects.equals(state, "DRIVER_STATE_UNCONFIGURED")) {
-            model.setStatus("Configuring driver...");
-            controller.configure();
-            controller.init();
-            model.setStatus("Configuration complete.");
-        }
-        else {
-            model.setStatus("Configuration already complete.");
+        try {
+            controller.getProtocolState().get();
+            String state = model.getState();
+            if (Objects.equals(state, "DRIVER_STATE_UNCONFIGURED")) {
+                model.setStatus("Configuring driver...");
+                controller.configure().get();
+                controller.init().get();
+                model.setStatus("Configuration complete.");
+            }
+            else {
+                model.setStatus("Configuration already complete.");
+            }
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
         }
     }
 
     public void connect() {
         if (! checkController()) return;
-        controller.getProtocolState();
-        String state = model.getState();
-        if (Objects.equals(state, "DRIVER_STATE_DISCONNECTED")) {
-            model.setStatus("Connecting to instrument...");
-            controller.connect();
-            model.setStatus("Connecting to instrument...done");
+        try {
+            controller.getProtocolState().get();
+            String state = model.getState();
+            if (Objects.equals(state, "DRIVER_STATE_DISCONNECTED")) {
+                model.setStatus("Connecting to instrument...");
+                controller.connect().get();
+                model.setStatus("Connecting to instrument...done");
+            }
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
         }
     }
 
@@ -375,12 +384,16 @@ public class ControlWindow {
 
     public void discover() {
         if (! checkController()) return;
-        controller.getProtocolState();
-        String state = model.getState();
-        if (Objects.equals(state, "DRIVER_STATE_UNKNOWN")) {
-            model.setStatus("Discovering protocol state...");
-            controller.discover();
-            model.setStatus("Discovering protocol state...done");
+        try {
+            controller.getProtocolState().get();
+            String state = model.getState();
+            if (Objects.equals(state, "DRIVER_STATE_UNKNOWN")) {
+                model.setStatus("Discovering protocol state...");
+                controller.discover();
+                model.setStatus("Discovering protocol state...done");
+            }
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
         }
     }
 
@@ -397,9 +410,8 @@ public class ControlWindow {
     public void displayTestProcedures() {
         // needs controller?  load instructions?
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/HelpWindow.fxml"));
-        Parent root = null;
         try {
-            root = (Parent) loader.load();
+            Parent root = loader.load();
             Scene scene = new Scene(root, 800, 600);
             Stage stage = new Stage();
             stage.setTitle("Help");
