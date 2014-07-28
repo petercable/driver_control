@@ -8,9 +8,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
-import org.zeromq.ZMsg;
 
-import java.time.Instant;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -24,7 +22,7 @@ public class DriverControl {
 
     public DriverControl(String host, int port, DriverModel model) {
         this.model = model;
-        String url = "tcp://" + host + ":" + port;
+        String url = String.format("tcp://%s:%d", host, port);
         log.debug("Initialize DriverControl");
         ZContext context = new ZContext();
         command_socket = context.createSocket(ZMQ.REQ);
@@ -33,19 +31,19 @@ public class DriverControl {
     }
 
     protected Future<String> ping() {
-        return sendCommand(DriverCommandEnum.PING, 30, "ping from java");
+        return sendCommand(DriverCommandEnum.PING, 5, "ping from java");
     }
 
     protected Future<String> configure() {
-        return sendCommand(DriverCommandEnum.CONFIGURE, model.getConfig().getPortAgentConfig());
+        return sendCommand(DriverCommandEnum.CONFIGURE, 15, model.getConfig().getPortAgentConfig());
     }
 
     protected Future<String> init() {
-        return sendCommand(DriverCommandEnum.SET_INIT_PARAMS, model.getConfig().getStartupConfig());
+        return sendCommand(DriverCommandEnum.SET_INIT_PARAMS, 5, model.getConfig().getStartupConfig());
     }
 
     protected Future<String> connect() {
-        return sendCommand(DriverCommandEnum.CONNECT);
+        return sendCommand(DriverCommandEnum.CONNECT, 15);
     }
 
     protected Future<String> discover() {
@@ -53,15 +51,15 @@ public class DriverControl {
     }
 
     protected Future<String> stop() {
-        return sendCommand(DriverCommandEnum.STOP_DRIVER);
+        return sendCommand(DriverCommandEnum.STOP_DRIVER, 5);
     }
 
     protected Future<String> getMetadata() {
-        return sendCommand(DriverCommandEnum.GET_CONFIG_METADATA);
+        return sendCommand(DriverCommandEnum.GET_CONFIG_METADATA, 5);
     }
 
     protected Future<String> getCapabilities() {
-        return sendCommand(DriverCommandEnum.GET_CAPABILITIES);
+        return sendCommand(DriverCommandEnum.GET_CAPABILITIES, 5);
     }
 
     protected Future<String> execute(String command) {
@@ -80,24 +78,13 @@ public class DriverControl {
         return sendCommand(DriverCommandEnum.SET_RESOURCE, parameters);
     }
 
-    private String _sendCommand(DriverCommandEnum command, long timeout, String... args) {
+    private String _sendCommand(DriverCommandEnum command, int timeout, String... args) {
         Platform.runLater(() -> model.setStatus(String.format("sending command %s...", command.toString())));
-        command_socket.send(buildCommand(command, args).toString());
-        String reply = null;
 
-        // loop on the command socket for a response
-        Instant endTime = Instant.now().plusSeconds(timeout);
-        while (Instant.now().isBefore(endTime)) {
-            ZMsg msg = ZMsg.recvMsg(command_socket, ZMQ.NOBLOCK);
-            if (msg != null) {
-                reply = msg.popString();
-                break;
-            }
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException ignored) {
-            }
-        }
+        command_socket.send(buildCommand(command, args).toString());
+        command_socket.setReceiveTimeOut(timeout * 1000);
+        String reply = command_socket.recvStr();
+
         log.debug("receive loop complete, reply: {}", reply);
 
         if (reply != null) {
@@ -147,12 +134,14 @@ public class DriverControl {
         return sendCommand(command, 600, args);
     }
 
-    private Future<String> sendCommand(DriverCommandEnum command, long timeout, String... args) {
+    private Future<String> sendCommand(DriverCommandEnum command, int timeout, String... args) {
         log.debug("sending command to driver {}", command);
         if (isCommanding) {
-            Platform.runLater(() -> model.setStatus(String.format(
+            String status = String.format(
                     "unable to send command %s while processing previous command",
-                    command.toString())));
+                    command.toString());
+            log.debug(status);
+            Platform.runLater(() -> model.setStatus(status));
             return executor.submit(() -> "busy processing previous command");
         }
 

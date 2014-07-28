@@ -15,10 +15,10 @@ public class DriverModel {
     protected final ObservableList<ProtocolCommand> commandList = FXCollections.observableArrayList();
     protected final ObservableList<Parameter> paramList = FXCollections.observableArrayList();
     protected final ObservableList<String> sampleTypes = FXCollections.observableArrayList();
-    protected Map<String, ObservableList<Map<String, Object>>> sampleLists = new HashMap<String, ObservableList<Map<String, Object>>>();
+    protected Map<String, ObservableList<Map<String, Object>>> sampleLists = new HashMap<>();
     private static Logger log = LogManager.getLogger();
-    private Map<String, ProtocolCommand> commands = new HashMap<String, ProtocolCommand>();
-    protected Map<String, Parameter> parameters = new HashMap<String, Parameter>();
+    private Map<String, ProtocolCommand> commands = new HashMap<>();
+    protected Map<String, Parameter> parameters = new HashMap<>();
     private SimpleStringProperty state = new SimpleStringProperty();
     private SimpleBooleanProperty paramsSettable = new SimpleBooleanProperty();
     private DriverConfig config;

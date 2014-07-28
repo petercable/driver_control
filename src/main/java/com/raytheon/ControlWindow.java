@@ -4,6 +4,7 @@ import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.ListChangeListener;
+import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -199,7 +200,10 @@ public class ControlWindow {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Open Driver Config");
         File file = fileChooser.showOpenDialog(root.getScene().getWindow());
+        return loadConfig(file);
+    }
 
+    public boolean loadConfig(File file) {
         if (file != null) {
             DriverConfig config;
 
@@ -299,6 +303,7 @@ public class ControlWindow {
             controller.getMetadata().get();
             model.setStatus("Connecting to driver...complete");
         } catch (Exception e) {
+            e.printStackTrace();
             Action response = Dialogs.create()
                     .owner(null)
                     .title("Driver Protocol Connection Exception")
@@ -403,8 +408,57 @@ public class ControlWindow {
     }
 
     public void validateStreams() {
+
         Map<String, DataStream> map = preload.getStreams(model.getConfig().getScenario());
-        log.debug(map);
+        map.entrySet().forEach(System.out::println);
+        for (String key: map.keySet()) {
+            if (model.sampleLists.containsKey(key)) {
+                ObservableList<Map<String, Object>> samples = model.sampleLists.get(key);
+                Map sample = samples.get(0);
+                DataStream ds = map.get(key);
+                log.debug("going to compare {} to {}", sample, ds);
+                for (String paramName: ds.getParams().keySet()) {
+                    DataParameter parameter = ds.getParams().get(paramName);
+                    if (!sample.containsKey(paramName))
+                        log.error("MISSING PARAMETER FROM STREAM: {}", paramName);
+                    else {
+                        Object value = sample.get(paramName);
+                        log.debug("Testing {} value: {}", paramName, value);
+                        switch(parameter.getValueEncoding()) {
+                            case "int8":
+                                if (!(value instanceof Integer)) {
+                                    log.error("Non integral value found in Integer field");
+                                    break;
+                                }
+                                if ((Integer)value > Byte.MAX_VALUE)
+                                    log.error("Oversized integral value found in Integer field");
+                            case "int16":
+                                if ((Integer)value > Short.MAX_VALUE)
+                                    log.error("Oversized integral value found in Integer field");
+                            case "int32":
+                                if ((Integer)value > Integer.MAX_VALUE)
+                                    log.error("Oversized integral value found in Integer field");
+                                break;
+                            case "float32":
+                                if (!(value instanceof Double)) {
+                                    log.error("Non floating point value found in FP field");
+                                }
+                                if ((Float)value > Float.MAX_VALUE)
+                                    log.error("Oversized FP value found in FP field");
+                            case "float64":
+                                if ((Double)value > Double.MAX_VALUE)
+                                    log.error("Oversized FP value found in FP field");
+                                break;
+                            case "str":
+                                break;
+                            default:
+                                log.error("UNHANDLED VALUE ENCODING {} {}", paramName, parameter.getValueEncoding());
+                                break;
+                        }
+                    }
+                }
+            }
+        }
     }
 
     public void displayTestProcedures() {
