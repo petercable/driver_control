@@ -10,12 +10,10 @@ import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMsg;
 
-import java.lang.reflect.Executable;
 import java.time.Instant;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 public class DriverControl {
     private final ZMQ.Socket command_socket;
@@ -83,7 +81,7 @@ public class DriverControl {
     }
 
     private String _sendCommand(DriverCommandEnum command, long timeout, String... args) {
-        Platform.runLater(()->model.setStatus("sending command " + command.toString() + "..."));
+        Platform.runLater(() -> model.setStatus(String.format("sending command %s...", command.toString())));
         command_socket.send(buildCommand(command, args).toString());
         String reply = null;
 
@@ -95,8 +93,12 @@ public class DriverControl {
                 reply = msg.popString();
                 break;
             }
-            try { Thread.sleep(100); } catch (InterruptedException ignored) { }
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException ignored) {
+            }
         }
+        log.debug("receive loop complete, reply: {}", reply);
 
         if (reply != null) {
             log.debug("received reply: {}", reply);
@@ -104,32 +106,33 @@ public class DriverControl {
                 JSONArray possibleException = new JSONArray(reply);
                 if (possibleException.length() == 3) {
                     log.error("EXCEPTION FROM DRIVER: {}", possibleException);
+                    return reply;
                 }
             }
-            else {
-                if (reply.startsWith("\"")) {
-                    reply = reply.substring(1, reply.length() - 1);
-                }
-                switch(command) {
-                    case GET_CONFIG_METADATA:
-                        final JSONObject metaData = new JSONObject(reply.replace("\\\"", "\""));
-                        Platform.runLater(()->model.parseMetadata(metaData));
-                        break;
-                    case GET_CAPABILITIES:
-                        final JSONArray capes = new JSONArray(reply).getJSONArray(0);
-                        Platform.runLater(() -> model.parseCapabilities(capes));
-                        break;
-                    case GET_RESOURCE_STATE:
-                        final String state = reply;
-                        Platform.runLater(() -> model.setState(state));
-                        break;
-                    case GET_RESOURCE:
-                        final JSONObject resource = new JSONObject(reply);
-                        Platform.runLater(() -> model.setParams(resource));
-                        break;
-                    default:
-                        break;
-                }
+            if (reply.startsWith("\"")) {
+                reply = reply.substring(1, reply.length() - 1);
+            }
+            log.debug("about to switch: {}", command);
+            switch (command) {
+                case GET_CONFIG_METADATA:
+                    final JSONObject metaData = new JSONObject(reply.replace("\\\"", "\""));
+                    Platform.runLater(() -> model.parseMetadata(metaData));
+                    break;
+                case GET_CAPABILITIES:
+                    final JSONArray capes = new JSONArray(reply).getJSONArray(0);
+                    Platform.runLater(() -> model.parseCapabilities(capes));
+                    break;
+                case GET_RESOURCE_STATE:
+                    final String state = reply;
+                    Platform.runLater(() -> model.setState(state));
+                    break;
+                case GET_RESOURCE:
+                    final JSONObject resource = new JSONObject(reply);
+                    Platform.runLater(() -> model.setParams(resource));
+                    break;
+                default:
+                    log.debug("hit default in switch statement");
+                    break;
             }
         } else {
             log.debug("no reply received!");
@@ -150,12 +153,11 @@ public class DriverControl {
             Platform.runLater(() -> model.setStatus(String.format(
                     "unable to send command %s while processing previous command",
                     command.toString())));
-            return executor.submit(()-> "busy processing previous command");
+            return executor.submit(() -> "busy processing previous command");
         }
 
         isCommanding = true;
-        return executor.submit(()->this._sendCommand(command, timeout, args));
-        //new Thread(()->this._sendCommand(command, timeout, args)).start();
+        return executor.submit(() -> this._sendCommand(command, timeout, args));
     }
 
     private JSONObject buildCommand(DriverCommandEnum command, String... args) {
@@ -163,7 +165,7 @@ public class DriverControl {
         JSONObject keyword_args = new JSONObject();
         JSONArray message_args = new JSONArray();
 
-        for (String arg: args) {
+        for (String arg : args) {
             try {
                 message_args.put(new JSONObject(arg));
             } catch (JSONException e) {
