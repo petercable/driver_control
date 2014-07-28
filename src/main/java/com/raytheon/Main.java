@@ -8,6 +8,9 @@ import javafx.stage.Stage;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.File;
+import java.nio.file.Paths;
+
 public class Main extends Application {
     private static Logger log = LogManager.getLogger();
     private ControlWindow controlWindow;
@@ -23,6 +26,13 @@ public class Main extends Application {
             stage.setTitle("DriverControl");
             stage.setScene(scene);
             stage.show();
+
+            Parameters parameters = getParameters();
+            if (parameters.getNamed().containsKey("config")) {
+                File path = Paths.get(parameters.getNamed().get("config")).toFile();
+                controlWindow.loadConfig(path);
+            }
+            log.debug("parameters: {}", parameters.getNamed());
         }
         catch (Exception e) {
             e.printStackTrace();
