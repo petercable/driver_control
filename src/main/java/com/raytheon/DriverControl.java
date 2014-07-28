@@ -9,6 +9,8 @@ import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMsg;
 
+import java.time.Instant;
+
 public class DriverControl {
     private final ZMQ.Socket command_socket;
     private static Logger log = LogManager.getLogger();
@@ -86,14 +88,14 @@ public class DriverControl {
         return sendCommand(command, 600);
     }
 
-    private String sendCommand(JSONObject command, int timeout) {
+    private String sendCommand(JSONObject command, long timeout) {
         synchronized (command_socket) {
             command_socket.send(command.toString());
             String reply = null;
 
             // loop on the command socket for a response
-            long endTime = System.nanoTime() + timeout*(long)1e9;
-            while (System.nanoTime() < endTime) {
+            Instant endTime = Instant.now().plusSeconds(timeout);
+            while (Instant.now().isBefore(endTime)) {
                 ZMsg msg = ZMsg.recvMsg(command_socket, ZMQ.NOBLOCK);
                 if (msg != null) {
                     reply = msg.popString();

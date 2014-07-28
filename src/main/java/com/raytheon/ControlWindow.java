@@ -33,50 +33,27 @@ import java.sql.SQLException;
 import java.util.*;
 
 public class ControlWindow {
-    @FXML
-    AnchorPane root;
-    @FXML
-    private TableView<ProtocolCommand> commandTable;
-    @FXML
-    private TableView<Parameter> parameterTable;
-    @FXML
-    private TableColumn<ProtocolCommand, String> commandColumn;
-    @FXML
-    private TableColumn<ProtocolCommand, String> commandNameColumn;
-    @FXML
-    private TableColumn<Parameter, String> parameterNameColumn;
-    @FXML
-    private TableColumn<Parameter, String> parameterValueColumn;
-    @FXML
-    private TableColumn<Parameter, String> parameterNewValueColumn;
-    @FXML
-    public TextArea console;
-    @FXML
-    private TextField stateField;
-    @FXML
-    private TextField statusField;
-    @FXML
-    private Button sendParamButton;
-    @FXML
-    private TabPane tabPane;
-    @FXML
-    private TextArea driverLogArea;
-    @FXML
-    private Button refreshLogButton;
+    @FXML AnchorPane root;
+    @FXML private TableView<ProtocolCommand> commandTable;
+    @FXML private TableView<Parameter> parameterTable;
+    @FXML private TableColumn<ProtocolCommand, String> commandColumn;
+    @FXML private TableColumn<ProtocolCommand, String> commandNameColumn;
+    @FXML private TableColumn<Parameter, String> parameterNameColumn;
+    @FXML private TableColumn<Parameter, String> parameterValueColumn;
+    @FXML private TableColumn<Parameter, String> parameterNewValueColumn;
+    @FXML public TextArea console;
+    @FXML private TextField stateField;
+    @FXML private TextField statusField;
+    @FXML private Button sendParamButton;
+    @FXML private TabPane tabPane;
+    @FXML private TextArea driverLogArea;
+    @FXML private Button refreshLogButton;
 
     private DriverModel model = new DriverModel();
     private DriverControl controller;
     protected EventListener listener;
     private PreloadDatabase preload;
     private static org.apache.logging.log4j.Logger log = LogManager.getLogger();
-
-    // Listeners
-    private ChangeListener<String> stateListener = new ChangeListener<String>() {
-        @Override
-        public void changed(ObservableValue<? extends String> observableValue, String s, String s2) {
-            Platform.runLater(() -> stateField.setText((observableValue).getValue()));
-        }
-    };
 
     private ChangeListener<Boolean> settableListener = new ChangeListener<Boolean>() {
         @Override
@@ -85,13 +62,6 @@ public class ControlWindow {
                     parameterNewValueColumn.setEditable(observableValue.getValue());
                     sendParamButton.setVisible(observableValue.getValue());
                 });
-        }
-    };
-
-    private ChangeListener<String> statusListener = new ChangeListener<String>() {
-        @Override
-        public void changed(ObservableValue<? extends String> observableValue, String s, String s2) {
-            Platform.runLater(() -> statusField.setText((observableValue).getValue()));
         }
     };
 
@@ -130,6 +100,8 @@ public class ControlWindow {
 
     @FXML
     private void initialize() {
+
+
         commandColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
         commandNameColumn.setCellValueFactory(new PropertyValueFactory<>("displayName"));
 
@@ -144,9 +116,11 @@ public class ControlWindow {
 
         commandTable.setItems(model.commandList);
         parameterTable.setItems(model.paramList);
-        this.model.getStateProperty().addListener(stateListener);
+
+        stateField.textProperty().bind(model.getStateProperty());
+        statusField.textProperty().bind(model.getStatusProperty());
+
         this.model.getParamsSettableProperty().addListener(settableListener);
-        this.model.getStatusProperty().addListener(statusListener);
         this.model.sampleTypes.addListener(sampleChangeListener);
         refreshLogButton.setVisible(false);
     }
@@ -251,7 +225,7 @@ public class ControlWindow {
                         .showException(e);
 
             }
-            statusField.setText("config file parsed successfully!");
+            model.setStatus("config file parsed successfully!");
         }
         return true;
     }
@@ -416,7 +390,8 @@ public class ControlWindow {
     }
 
     public void validateStreams() {
-        preload.getParameter("PD190");
+        Map<String, DataStream> map = preload.getStreams(model.getConfig().getScenario());
+        log.debug(map);
     }
 
     public void displayTestProcedures() {
@@ -430,6 +405,7 @@ public class ControlWindow {
             stage.setTitle("Help");
             stage.setScene(scene);
             stage.show();
+            ((HelpWindow)loader.getController()).load();
         } catch (IOException e) {
             e.printStackTrace();
         }

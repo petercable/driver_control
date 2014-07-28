@@ -21,6 +21,7 @@ public class DriverConfig {
     private String eventPortFile;
     private String host;
     private String databaseFile;
+    private String scenario;
 
     public DriverConfig(File file) throws IOException {
         // open the file, parse the config
@@ -37,6 +38,7 @@ public class DriverConfig {
         eventPortFile = driverConfig.getString("event_port_file");
         host = driverConfig.getString("driver_host");
         databaseFile = driverConfig.getString("database_file");
+        scenario = driverConfig.getString("scenario");
     }
 
     public String getPortAgentConfig() {
@@ -80,5 +82,9 @@ public class DriverConfig {
 
     public String getDatabaseFile() {
         return databaseFile;
+    }
+
+    public String getScenario() {
+        return scenario;
     }
 }

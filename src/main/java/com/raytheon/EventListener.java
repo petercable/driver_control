@@ -1,5 +1,6 @@
 package com.raytheon;
 
+import javafx.application.Platform;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
@@ -57,7 +58,7 @@ public class EventListener extends Thread {
                 } else if (MessageTypes.STATE_CHANGE.equals(type)) {
                     log.info("Received STATE CHANGE event: " + event);
                     controller.getCapabilities();
-                    model.setState(event.getString(VALUE));
+                    Platform.runLater(() -> model.setState(event.getString(VALUE)));
                 } else {
                     log.info(event);
                 }
