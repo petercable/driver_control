@@ -372,8 +372,14 @@ public class ControlWindow {
 
     public void getCapabilities() {
         if (! checkController()) return;
+        model.setStatus("Getting capabilities...");
         controller.getCapabilities();  // immediate action
-        model.setStatus("");
+    }
+
+    public void getState() {
+        if (! checkController()) return;
+        model.setStatus("Getting protocol state...");
+        controller.getProtocolState();  // immediate action
     }
 
     public void getParams() {

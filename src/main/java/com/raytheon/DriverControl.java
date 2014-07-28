@@ -117,25 +117,31 @@ public class DriverControl {
                 case GET_CONFIG_METADATA:
                     final JSONObject metaData = new JSONObject(reply.replace("\\\"", "\""));
                     Platform.runLater(() -> model.parseMetadata(metaData));
+                    Platform.runLater(() -> model.setStatus("received meta data"));
                     break;
                 case GET_CAPABILITIES:
                     final JSONArray capes = new JSONArray(reply).getJSONArray(0);
                     Platform.runLater(() -> model.parseCapabilities(capes));
+                    Platform.runLater(() -> model.setStatus("received capabilities"));
                     break;
                 case GET_RESOURCE_STATE:
                     final String state = reply;
                     Platform.runLater(() -> model.setState(state));
+                    Platform.runLater(() -> model.setStatus("received state"));
                     break;
                 case GET_RESOURCE:
                     final JSONObject resource = new JSONObject(reply);
                     Platform.runLater(() -> model.setParams(resource));
+                    Platform.runLater(() -> model.setStatus("received resource"));
                     break;
                 default:
                     log.debug("hit default in switch statement");
+                    Platform.runLater(() -> model.setStatus(""));
                     break;
             }
         } else {
             log.debug("no reply received!");
+            Platform.runLater(() -> model.setStatus("missing expected reply"));
         }
         log.debug(reply);
         isCommanding = false;
