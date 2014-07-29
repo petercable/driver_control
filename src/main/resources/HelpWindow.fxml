@@ -1,15 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.scene.text.*?>
+<?import javafx.scene.control.*?>
+<?import java.lang.*?>
 <?import javafx.scene.web.*?>
 <?import javafx.scene.layout.*?>
 
-
-<AnchorPane fx:controller="com.raytheon.HelpWindow" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity"
-            minWidth="-Infinity" prefHeight="600.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/8"
-            xmlns:fx="http://javafx.com/fxml/1">
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.raytheon.HelpWindow">
     <children>
-        <WebView fx:id="helpWebView" layoutX="140.0" layoutY="67.0" prefHeight="200.0" prefWidth="200.0"
-                 AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0"
-                 AnchorPane.topAnchor="0.0"/>
+      <VBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+         <children>
+            <HBox prefHeight="30.0">
+               <children>
+                  <Button fx:id="browseBack" mnemonicParsing="false" prefWidth="26.0" text="" HBox.hgrow="NEVER" onMouseClicked="#goBack">
+                     <font>
+                        <Font name="Wingdings 3" size="12.0" />
+                     </font>
+                  </Button>
+                  <Button fx:id="browseForward" mnemonicParsing="false" prefWidth="26.0" text="" HBox.hgrow="NEVER" onMouseClicked="#goForward">
+                     <font>
+                        <Font name="Wingdings 3" size="12.0" />
+                     </font>
+                  </Button>
+                  <TextField fx:id="urlField" prefHeight="26.0" prefWidth="744.0" HBox.hgrow="ALWAYS" />
+               </children>
+            </HBox>
+              <WebView fx:id="helpWebView" layoutX="140.0" layoutY="67.0" prefHeight="400.0" prefWidth="545.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" VBox.vgrow="ALWAYS" />
+         </children>
+      </VBox>
     </children>
 </AnchorPane>
