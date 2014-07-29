@@ -20,9 +20,9 @@ public class Main extends Application {
         try {
             // create window
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/ControlWindow.fxml"));
-            Parent root = (Parent) loader.load();
+            Parent root = loader.load();
             Scene scene = new Scene(root, 800, 600);
-            controlWindow = (ControlWindow)loader.getController();
+            controlWindow = loader.getController();
             stage.setTitle("DriverControl");
             stage.setScene(scene);
             stage.show();

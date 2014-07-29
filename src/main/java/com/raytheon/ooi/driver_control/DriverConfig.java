@@ -11,6 +11,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
+import java.util.StringJoiner;
 
 public class DriverConfig {
     private static Logger log = LogManager.getLogger();
@@ -62,18 +63,15 @@ public class DriverConfig {
     }
 
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("PORT AGENT CONFIG\n\n");
-        sb.append(portAgentConfig.toString(2));
-        sb.append("\n\nSTARTUP CONFIG\n\n");
-        sb.append(startupConfig.toString(2));
-        sb.append("\n\nEGG URL: ");
-        sb.append(eggUrl);
-        sb.append("\nCOMMAND PORT FILE: ");
-        sb.append(commandPortFile);
-        sb.append("\nEVENT PORT FILE: ");
-        sb.append(eventPortFile);
-        return sb.toString();
+        StringJoiner joiner = new StringJoiner("\n\n");
+        joiner.add("PORT AGENT CONFIG");
+        joiner.add(portAgentConfig.toString(2));
+        joiner.add("STARTUP CONFIG");
+        joiner.add(startupConfig.toString(2));
+        joiner.add("EGG URL: " + eggUrl);
+        joiner.add("COMMAND PORT FILE: " + commandPortFile);
+        joiner.add("EVENT PORT FILE: " + eventPortFile);
+        return joiner.toString();
     }
 
     public String getHost() {

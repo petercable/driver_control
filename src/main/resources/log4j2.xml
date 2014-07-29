@@ -7,14 +7,10 @@
         <Console name="Console" target="SYSTEM_OUT">
             <PatternLayout pattern="${layout}"/>
         </Console>
-        <TextAppender name="TextAppender">
-            <PatternLayout pattern="${layout}"/>
-        </TextAppender>
     </Appenders>
     <Loggers>
         <Root level="DEBUG">
             <AppenderRef ref="Console"/>
-            <AppenderRef ref="TextAppender"/>
         </Root>
     </Loggers>
 </Configuration>

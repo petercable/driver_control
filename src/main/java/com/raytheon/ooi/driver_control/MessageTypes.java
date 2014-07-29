@@ -1,8 +1,5 @@
 package com.raytheon.ooi.driver_control;
 
-/**
- * Created by pcable on 7/17/14.
- */
 public enum MessageTypes {
     SAMPLE        ("DRIVER_ASYNC_EVENT_SAMPLE"),
     STATE_CHANGE  ("DRIVER_ASYNC_EVENT_STATE_CHANGE"),

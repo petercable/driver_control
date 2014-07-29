@@ -123,7 +123,6 @@ public class ControlWindow {
 
         this.model.getParamsSettableProperty().addListener(settableListener);
         this.model.sampleTypes.addListener(sampleChangeListener);
-        refreshLogButton.setVisible(false);
     }
 
     private int getPort(String filename) throws Exception {
@@ -172,37 +171,14 @@ public class ControlWindow {
         controller.setResource(new JSONObject(values).toString());
     }
 
-    public void refreshDriverLog() {
-        File file = new File("/tmp/mi-drivers.log");
-
-        try (FileReader in=new FileReader(file)) {
-            char[] buffer = new char[4096];
-            int len;
-            driverLogArea.setText("");
-            while ((len = in.read(buffer)) != -1) {
-                String s = new String(buffer, 0, len);
-                driverLogArea.appendText(s);
-            }
-            // driverLogArea.setCaretPosition(0);
-        }
-        catch (IOException e) {
-            driverLogArea.setText(e.getClass().getName() + ": " + e.getMessage());
-            Dialogs.create()
-                    .owner(null)
-                    .title("Driver Log")
-                    .message("Unable to load driver log.")
-                    .showException(e);
-        }
-    }
-
-    public boolean loadConfig() {
+    public void loadConfig() {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Open Driver Config");
         File file = fileChooser.showOpenDialog(root.getScene().getWindow());
-        return loadConfig(file);
+        loadConfig(file);
     }
 
-    public boolean loadConfig(File file) {
+    public void loadConfig(File file) {
         log.debug("loading configuration from file: {}", file);
         if (file != null) {
             DriverConfig config;
@@ -215,7 +191,7 @@ public class ControlWindow {
                         .title("Load Configuration Exception")
                         .message("Unable to parse configuration. Configuration must be valid yaml file.")
                         .showException(e);
-                return false;
+                return;
             }
 
             model.setConfig(config);
@@ -232,7 +208,7 @@ public class ControlWindow {
             }
             model.setStatus("config file parsed successfully!");
         }
-        return true;
+        return;
     }
 
     public DriverConfig getConfig() {
@@ -304,11 +280,6 @@ public class ControlWindow {
                 }
             }
         }).start();
-
-
-//        driverLogArea.setText("Driver started. Click Refresh for latest log data.");
-//        refreshLogButton.setVisible(true);
-        // TODO - create a thread to monitor changes to log file and update window
     }
 
     public void zmqConnect() {
@@ -491,7 +462,6 @@ public class ControlWindow {
     }
 
     public void displayTestProcedures() {
-        // needs controller?  load instructions?
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/HelpWindow.fxml"));
         try {
             Parent root = loader.load();

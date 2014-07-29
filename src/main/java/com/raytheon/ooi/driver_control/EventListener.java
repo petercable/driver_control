@@ -15,7 +15,6 @@ public class EventListener extends Thread {
     private ZContext context;
     private ZMQ.Socket event_socket;
     private static Logger log = LogManager.getLogger();
-    private Thread event_thread;
     private boolean keepRunning = true;
     private DriverModel model;
     private DriverControl controller;
@@ -28,7 +27,7 @@ public class EventListener extends Thread {
         context = new ZContext();
         event_socket = context.createSocket(ZMQ.SUB);
         // connect to the event port
-        event_socket.connect("tcp://" + host + ":" + port);
+        event_socket.connect(String.format("tcp://%s:%d", host, port));
         event_socket.subscribe(new byte[0]);
         log.debug("Event socket connected!");
         this.setName("event listener thread");
@@ -38,7 +37,7 @@ public class EventListener extends Thread {
         while (keepRunning) {
             ZMsg msg = ZMsg.recvMsg(event_socket, ZMQ.NOBLOCK);
             if (msg == null) {
-                try { Thread.sleep(100); } catch (InterruptedException e1) { }
+                try { Thread.sleep(100); } catch (InterruptedException ignored) { }
                 continue;
             }
             for (Object aMsg : msg) {

@@ -52,7 +52,7 @@ public class Parameter {
     public String getUnits() { return units.get(); }
 
     public String toString() {
-        return "name: " + name + " displayName: " + displayName;
+        return String.format("name: %s displayName: %s", name, displayName);
     }
 
     public SimpleStringProperty valueProperty() { return value; }

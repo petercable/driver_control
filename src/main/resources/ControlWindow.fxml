@@ -14,35 +14,35 @@
             <children>
                 <MenuBar minHeight="29.0">
                     <menus>
-                        <Menu mnemonicParsing="false" text="File">
+                        <Menu text="File">
                             <items>
-                                <MenuItem mnemonicParsing="false" onAction="#loadConfig" text="Load Config"/>
-                                <MenuItem mnemonicParsing="false" onAction="#exit" text="Exit"/>
+                                <MenuItem onAction="#loadConfig" text="Load Config"/>
+                                <MenuItem onAction="#exit" text="Exit"/>
                             </items>
                         </Menu>
-                        <Menu mnemonicParsing="false" text="Driver">
+                        <Menu text="Driver">
                             <items>
-                                <MenuItem mnemonicParsing="false" onAction="#configure" text="Configure"/>
-                                <MenuItem mnemonicParsing="false" onAction="#connect" text="Connect to Instrument"/>
-                                <MenuItem mnemonicParsing="false" onAction="#discover" text="Discover"/>
-                                <MenuItem mnemonicParsing="false" onAction="#shutdownDriver" text="Shutdown"/>
-                                <SeparatorMenuItem mnemonicParsing="false"/>
-                                <MenuItem mnemonicParsing="false" onAction="#getCapabilities" text="Get Capabilities"/>
-                                <MenuItem mnemonicParsing="false" onAction="#getState" text="Get State"/>
-                                <MenuItem mnemonicParsing="false" onAction="#getParams" text="Get Parameters"/>
+                                <MenuItem onAction="#configure" text="Configure"/>
+                                <MenuItem onAction="#connect" text="Connect to Instrument"/>
+                                <MenuItem onAction="#discover" text="Discover"/>
+                                <MenuItem onAction="#shutdownDriver" text="Shutdown"/>
+                                <SeparatorMenuItem />
+                                <MenuItem onAction="#getCapabilities" text="Get Capabilities"/>
+                                <MenuItem onAction="#getState" text="Get State"/>
+                                <MenuItem onAction="#getParams" text="Get Parameters"/>
                             </items>
                         </Menu>
-                        <Menu mnemonicParsing="false" text="Test">
+                        <Menu text="Test">
                             <items>
-                                <MenuItem mnemonicParsing="false" onAction="#launchDriver" text="Launch Driver"/>
-                                <MenuItem mnemonicParsing="false" onAction="#zmqConnect" text="Connect to Driver"/>
-                                <SeparatorMenuItem mnemonicParsing="false"/>
-                                <MenuItem mnemonicParsing="false" onAction="#validateStreams" text="Validate Streams"/>
+                                <MenuItem onAction="#launchDriver" text="Launch Driver"/>
+                                <MenuItem onAction="#zmqConnect" text="Connect to Driver"/>
+                                <SeparatorMenuItem />
+                                <MenuItem onAction="#validateStreams" text="Validate Streams"/>
                             </items>
                         </Menu>
-                        <Menu mnemonicParsing="false" text="Help">
+                        <Menu text="Help">
                             <items>
-                                <MenuItem mnemonicParsing="false" onAction="#displayTestProcedures"
+                                <MenuItem onAction="#displayTestProcedures"
                                           text="Test Procedures"/>
                             </items>
                         </Menu>
@@ -86,7 +86,7 @@
                                         <HBox alignment="TOP_RIGHT" VBox.vgrow="NEVER">
                                             <children>
                                                 <Button fx:id="sendParamButton" maxHeight="-Infinity"
-                                                        minHeight="-Infinity" mnemonicParsing="false"
+                                                        minHeight="-Infinity" 
                                                         onMouseClicked="#sendParams" prefHeight="26.0" text="Send"
                                                         translateZ="1.0" AnchorPane.bottomAnchor="2.0"
                                                         AnchorPane.rightAnchor="2.0" VBox.vgrow="NEVER"/>
@@ -113,15 +113,6 @@
                                                   AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0"
                                                   AnchorPane.topAnchor="0.0" VBox.vgrow="ALWAYS">
                                         </TextArea>
-                                        <HBox alignment="TOP_RIGHT" layoutX="746.0" VBox.vgrow="NEVER">
-                                            <children>
-                                                <Button fx:id="refreshLogButton" maxHeight="-Infinity"
-                                                        minHeight="-Infinity" mnemonicParsing="false"
-                                                        onMouseClicked="#refreshDriverLog" prefHeight="26.0"
-                                                        text="Refresh" AnchorPane.bottomAnchor="2.0"
-                                                        AnchorPane.rightAnchor="2.0" HBox.hgrow="NEVER"/>
-                                            </children>
-                                        </HBox>
                                     </children>
                                 </VBox>
                             </content>

@@ -20,6 +20,6 @@ public class ProtocolCommand {
     }
 
     public String toString() {
-        return "name: " + name + " displayName: " + displayName;
+        return String.format("name: %s displayName: %s", name, displayName);
     }
 }

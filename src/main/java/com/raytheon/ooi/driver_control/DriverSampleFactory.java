@@ -20,7 +20,7 @@ public class DriverSampleFactory {
     private DriverSampleFactory() {}
 
     public static Map<String, Object> parseSample(String s) {
-        Map<String, Object> map = new HashMap<String, Object>();
+        Map<String, Object> map = new HashMap<>();
         JSONObject json = new JSONObject(s);
         JSONArray json_values =  json.getJSONArray(VALUES);
 
