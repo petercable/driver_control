@@ -23,9 +23,7 @@ import org.controlsfx.dialog.Dialog;
 import org.controlsfx.dialog.Dialogs;
 import org.json.JSONObject;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -33,6 +31,7 @@ import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 public class ControlWindow {
     @FXML AnchorPane root;
@@ -282,10 +281,33 @@ public class ControlWindow {
         }
         String[] command = {python, launch_file, working_path, egg_url};
 
-        Runtime.getRuntime().exec(command, args);
+        Process p = Runtime.getRuntime().exec(command, args);
 
-        driverLogArea.setText("Driver started. Click Refresh for latest log data.");
-        refreshLogButton.setVisible(true);
+        new Thread(()-> {
+            BufferedReader r = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            while (true) {
+                StringJoiner joiner = new StringJoiner("\n");
+                try {
+                    while (r.ready()) {
+                        joiner.add(r.readLine());
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                if (joiner.length() > 0)
+                    Platform.runLater(()->driverLogArea.appendText(joiner.toString()));
+
+                try {
+                    TimeUnit.MILLISECONDS.sleep(100);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
+
+
+//        driverLogArea.setText("Driver started. Click Refresh for latest log data.");
+//        refreshLogButton.setVisible(true);
         // TODO - create a thread to monitor changes to log file and update window
     }
 
@@ -478,7 +500,6 @@ public class ControlWindow {
             stage.setTitle("Help");
             stage.setScene(scene);
             stage.show();
-            ((HelpWindow)loader.getController()).load();
         } catch (IOException e) {
             e.printStackTrace();
         }

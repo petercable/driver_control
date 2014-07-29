@@ -80,10 +80,15 @@ public class DriverControl {
 
     private String _sendCommand(DriverCommandEnum command, int timeout, String... args) {
         Platform.runLater(() -> model.setStatus(String.format("sending command %s...", command.toString())));
+        String reply = null;
 
-        command_socket.send(buildCommand(command, args).toString());
-        command_socket.setReceiveTimeOut(timeout * 1000);
-        String reply = command_socket.recvStr();
+        try {
+            command_socket.send(buildCommand(command, args).toString());
+            command_socket.setReceiveTimeOut(timeout * 1000);
+            reply = command_socket.recvStr();
+        } finally {
+            isCommanding = false;
+        }
 
         log.debug("receive loop complete, reply: {}", reply);
 
@@ -131,8 +136,6 @@ public class DriverControl {
             Platform.runLater(() -> model.setStatus("missing expected reply"));
         }
         log.debug(reply);
-        isCommanding = false;
-
         return reply;
     }
 
