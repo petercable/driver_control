@@ -1,9 +1,5 @@
 # Test Procedures for OOI Drivers
 
-```
-    yo fuck you yo yo
-```
-
 DriverControl provides an interface for testing of OOI instrument protocol drivers. 
 
 # Setup
@@ -72,8 +68,67 @@ The following driver configuration file sets up testing for the TRHPH instrument
       parameters:
 ```
 
-## 
+# Driver Test
 
+Driver Config allows step by step execution of instrument driver commands. The protocol driver must be executed 
+in the following sequence:
 
+1. **Load test configuration**. Test configuration can be loaded two ways:
+  * Specify the test configuration file on the command line (*config=<config file>*).
+  * Use the menu option *File->Load Config*.
+  
+2. **Launch the driver**. The instrument driver must be running prior to testing, although it is not necessary to 
+start it from within Driver Control if it is already running.
 
+3. **Connect to the driver**. Select the menu option *Test->Connect to Driver*. The driver log file will 
+indicate a successful connection.  The bottom left status box will indicate the current driver state. 
 
+  * If the driver was started in Driver Control, the Driver Log tab can be used to view the log file. 
+  * If the driver was started during this session of Driver Control, the driver state should read 
+    *DRIVER_STATE_UNCONFIGURED*.
+
+4. **Configure the driver**. If the driver state is *DRIVER_STATE_UNCONFIGURED*, send the instrument driver the 
+configure command using menu option *Driver->Configure*. This can be verified in the driver log file.
+
+5. **Connect to instrument**. If the driver state is *DRIVER_STATE_DISCONNECTED*, send the connect command to the 
+instrument driver using the menu option *Driver->Connect to Instrument*. This can be verified in the driver log 
+file.
+
+6. **Discover state**. If the driver state is *DRIVER_STATE_UNKNOWN* the driver needs to enter discovery to 
+determine its state. Enter discovery by selecting the menu option *Driver->Discover*. Depending on the instrument
+it may take some time to establish first communications with the instrument through the driver. The bottom right 
+status text will display *sending command discover_state...* until the discovery is complete. 
+At the completion of the 
+discovery phase, the driver state should be *DRIVER_STATE_COMMAND* or *DRIVER_STATE_AUTOSAMPLE* depending on the
+instrument. 
+
+  * *We are currently working on an issue with discovery. The Driver Control may not return from the discovery
+    command. If this occurs, restart Driver Control and reconnect to the driver.* 
+
+7. **Testing**. There are three main components to driver testing:
+
+  * **State Change**. Verify successful connection to the driver and exercise the various capabilities in each
+    state. This is accomplished on the *Command* tab. 
+
+  * **Parameter Management**. Verify parameters can be initialized, read, and set. 
+  
+    1. *Parameter initialization.* Parameter startup values are specified in the test configuration file. Those
+       values must match the values displayed in the *Parameters* tab after a clean startup of the driver. 
+
+    2. *Parameter read.* Verify all instrument parameters are listed in the *Parameters* tab. The columns can be 
+       sorted to assist in matching parameters. 
+       
+    3. *Parameter set.* Verify modifiable instrument parameters can be set and read-only parameters cannot be
+       set. To set a parameter value, first select the parameter row, then click in the New Value cell. After 
+       setting all parameters, press the *Send* button. 
+       
+      * You must press *Enter* in the cell for the parameter value to be saved.
+      
+  * **Stream validation**. Verify the streams are published as expected and produce the correct values. 
+    Select *Test->Validate Streams* after collecting stream data from the driver to compare against the values
+    supplied to the Preload spreadsheet.
+    
+  * **Algorithm validation**. Verify data published by the streams can be used to provide data to algorithms. 
+    
+    * *This is feature has not yet been implemented in Driver Control.*
+      
