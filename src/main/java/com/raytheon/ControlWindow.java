@@ -204,6 +204,7 @@ public class ControlWindow {
     }
 
     public boolean loadConfig(File file) {
+        log.debug("loading configuration from file: {}", file);
         if (file != null) {
             DriverConfig config;
 
