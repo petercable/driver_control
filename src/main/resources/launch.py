@@ -110,7 +110,7 @@ def patch_zmq_driver():
     :return:
     """
     os.system('sed -i bak s/pyobj/json/g mi/core/instrument/zmq_driver_process.py')
-    os.system('sed -i bak s/INFO/DEBUG/g res/config/mi-logging.yml')
+    #os.system('sed -i bak s/INFO/DEBUG/g res/config/mi-logging.yml')
 
 
 def betterParseArgs(*args, **kwargs):

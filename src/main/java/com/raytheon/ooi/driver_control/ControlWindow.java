@@ -17,6 +17,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import net.lingala.zip4j.exception.ZipException;
 import org.apache.logging.log4j.LogManager;
 import org.controlsfx.control.action.Action;
 import org.controlsfx.dialog.Dialog;
@@ -24,7 +25,6 @@ import org.controlsfx.dialog.Dialogs;
 import org.json.JSONObject;
 
 import java.io.*;
-import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -51,10 +51,11 @@ public class ControlWindow {
     @FXML private Button refreshLogButton;
 
     private DriverModel model = new DriverModel();
-    private DriverControl controller;
+    protected DriverControl controller;
     protected EventListener listener;
     private PreloadDatabase preload;
     private static org.apache.logging.log4j.Logger log = LogManager.getLogger();
+    protected Process driverProcess = null;
 
     private ChangeListener<Boolean> settableListener = new ChangeListener<Boolean>() {
         @Override
@@ -133,12 +134,13 @@ public class ControlWindow {
 
     public void selectCommand(MouseEvent event) {
         if (! checkController()) return;
-            log.debug("received event: " + event);
             TableView source = (TableView) event.getSource();
             int row = source.getSelectionModel().getSelectedIndex();
-            ProtocolCommand command = model.commandList.get(row);
-            log.debug("maybe I clicked: " + command);
-            controller.execute(command.getName());
+            if (row != -1) {
+                ProtocolCommand command = model.commandList.get(row);
+                log.debug("Clicked: " + command);
+                controller.execute(command.getName());
+            }
     }
 
     public void sendParams() {
@@ -208,7 +210,6 @@ public class ControlWindow {
             }
             model.setStatus("config file parsed successfully!");
         }
-        return;
     }
 
     public DriverConfig getConfig() {
@@ -226,41 +227,16 @@ public class ControlWindow {
         }
         return model.getConfig();
     }
-    private void missingEnvironmentVariable(String envVar) {
-        Dialogs.create()
-                .owner(null)
-                .title("Environment")
-                .message("Missing required environment variable " + envVar)
-                .showError();
+
+    public void launchDriver() throws IOException, InterruptedException, ZipException {
+        driverProcess = DriverLauncher.launchDriver(model.getConfig());
+        watchStream(driverProcess.getErrorStream());
+        watchStream(driverProcess.getInputStream());
     }
 
-    public void launchDriver() throws IOException, InterruptedException {
-        URL launch_url = getClass().getResource("/launch.py");
-        DriverConfig config = this.getConfig();
-        if (config == null) return;
-
-        String egg_url = config.getEggUrl();
-
-        String launch_file = launch_url.getFile();
-        String path = "PATH=$PATH:" + System.getenv("PATH");
-        String virtualEnv = System.getenv("VIRTUAL_ENV");
-        if (virtualEnv == null) {
-            missingEnvironmentVariable("VIRTUAL_ENV");
-            return;
-        }
-        String[] args = {path};
-        String python = virtualEnv + "/bin/python";
-        String working_path = System.getenv("TEST_BASE");
-        if (working_path == null) {
-            missingEnvironmentVariable("TEST_BASE");
-            return;
-        }
-        String[] command = {python, launch_file, working_path, egg_url};
-
-        Process p = Runtime.getRuntime().exec(command, args);
-
-        new Thread(()-> {
-            BufferedReader r = new BufferedReader(new InputStreamReader(p.getInputStream()));
+    public void watchStream(InputStream is) {
+        Thread t = new Thread(() -> {
+            BufferedReader r = new BufferedReader(new InputStreamReader(is));
             while (true) {
                 StringJoiner joiner = new StringJoiner("\n");
                 try {
@@ -271,7 +247,7 @@ public class ControlWindow {
                     e.printStackTrace();
                 }
                 if (joiner.length() > 0)
-                    Platform.runLater(()->driverLogArea.appendText(joiner.toString()));
+                    Platform.runLater(() -> driverLogArea.appendText(joiner.toString()));
 
                 try {
                     TimeUnit.MILLISECONDS.sleep(100);
@@ -279,7 +255,9 @@ public class ControlWindow {
                     e.printStackTrace();
                 }
             }
-        }).start();
+        });
+        t.setDaemon(true);
+        t.start();
     }
 
     public void zmqConnect() {
@@ -308,7 +286,7 @@ public class ControlWindow {
             if (response == Dialog.Actions.YES) {
                 try {
                     this.launchDriver();
-                } catch (IOException | InterruptedException e1) {
+                } catch (IOException | InterruptedException | ZipException e1) {
                     Dialogs.create()
                             .owner(null)
                             .title("Launch Driver")
@@ -411,61 +389,59 @@ public class ControlWindow {
 
         Map<String, DataStream> map = preload.getStreams(model.getConfig().getScenario());
         map.entrySet().forEach(System.out::println);
-        for (String key: map.keySet()) {
-            if (model.sampleLists.containsKey(key)) {
-                ObservableList<Map<String, Object>> samples = model.sampleLists.get(key);
-                Map sample = samples.get(0);
-                DataStream ds = map.get(key);
-                log.debug("going to compare {} to {}", sample, ds);
-                for (String paramName: ds.getParams().keySet()) {
-                    DataParameter parameter = ds.getParams().get(paramName);
-                    if (!sample.containsKey(paramName))
-                        log.error("MISSING PARAMETER FROM STREAM: {}", paramName);
-                    else {
-                        Object value = sample.get(paramName);
-                        log.debug("Testing {} value: {}", paramName, value);
-                        switch(parameter.getValueEncoding()) {
-                            case "int8":
-                                if (!(value instanceof Integer)) {
-                                    log.error("Non integral value found in Integer field");
-                                    break;
-                                }
-                                if ((Integer)value > Byte.MAX_VALUE)
-                                    log.error("Oversized integral value found in Integer field");
-                            case "int16":
-                                if ((Integer)value > Short.MAX_VALUE)
-                                    log.error("Oversized integral value found in Integer field");
-                            case "int32":
-                                if ((Integer)value > Integer.MAX_VALUE)
-                                    log.error("Oversized integral value found in Integer field");
+        map.keySet().stream().filter(model.sampleLists::containsKey).forEach(key -> {
+            ObservableList<Map<String, Object>> samples = model.sampleLists.get(key);
+            Map sample = samples.get(0);
+            DataStream ds = map.get(key);
+            log.debug("going to compare {} to {}", sample, ds);
+            for (String paramName : ds.getParams().keySet()) {
+                DataParameter parameter = ds.getParams().get(paramName);
+                if (!sample.containsKey(paramName))
+                    log.error("MISSING PARAMETER FROM STREAM: {}", paramName);
+                else {
+                    Object value = sample.get(paramName);
+                    log.debug("Testing {} value: {}", paramName, value);
+                    switch (parameter.getValueEncoding()) {
+                        case "int8":
+                            if (!(value instanceof Integer)) {
+                                log.error("Non integral value found in Integer field");
                                 break;
-                            case "float32":
-                                if (!(value instanceof Double)) {
-                                    log.error("Non floating point value found in FP field");
-                                }
-                                if ((Float)value > Float.MAX_VALUE)
-                                    log.error("Oversized FP value found in FP field");
-                            case "float64":
-                                if ((Double)value > Double.MAX_VALUE)
-                                    log.error("Oversized FP value found in FP field");
-                                break;
-                            case "str":
-                                break;
-                            default:
-                                log.error("UNHANDLED VALUE ENCODING {} {}", paramName, parameter.getValueEncoding());
-                                break;
-                        }
+                            }
+                            if ((Integer) value > Byte.MAX_VALUE)
+                                log.error("Oversized integral value found in Integer field");
+                        case "int16":
+                            if ((Integer) value > Short.MAX_VALUE)
+                                log.error("Oversized integral value found in Integer field");
+                        case "int32":
+                            if ((Integer) value > Integer.MAX_VALUE)
+                                log.error("Oversized integral value found in Integer field");
+                            break;
+                        case "float32":
+                            if (!(value instanceof Double)) {
+                                log.error("Non floating point value found in FP field");
+                            }
+                            if ((Float) value > Float.MAX_VALUE)
+                                log.error("Oversized FP value found in FP field");
+                        case "float64":
+                            if ((Double) value > Double.MAX_VALUE)
+                                log.error("Oversized FP value found in FP field");
+                            break;
+                        case "str":
+                            break;
+                        default:
+                            log.error("UNHANDLED VALUE ENCODING {} {}", paramName, parameter.getValueEncoding());
+                            break;
                     }
                 }
             }
-        }
+        });
     }
 
     public void displayTestProcedures() {
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/HelpWindow.fxml"));
         try {
             Parent root = loader.load();
-            Scene scene = new Scene(root, 800, 600);
+            Scene scene = new Scene(root, 900, 600);
             Stage stage = new Stage();
             stage.setTitle("Help");
             stage.setScene(scene);
