@@ -18,11 +18,14 @@ public class DriverConfig {
     private JSONObject portAgentConfig;
     private JSONObject startupConfig;
     private String eggUrl;
-    private String commandPortFile;
-    private String eventPortFile;
-    private String host;
-    private String databaseFile;
     private String scenario;
+
+    private final String host = "localhost";
+    private final String temp = "/tmp/driver_control";
+    private final String commandPortFile = String.join("/", temp, "command_port");
+    private final String eventPortFile = String.join("/", temp, "event_port");
+    private final String databaseFile = String.join("/", temp, "preload.db");
+
 
     public DriverConfig(File file) throws IOException {
         // open the file, parse the config
@@ -35,10 +38,6 @@ public class DriverConfig {
         startupConfig = config.getJSONObject("startup_config");
         JSONObject driverConfig = config.getJSONObject("driver_config");
         eggUrl = driverConfig.getString("egg_url");
-        commandPortFile = driverConfig.getString("command_port_file");
-        eventPortFile = driverConfig.getString("event_port_file");
-        host = driverConfig.getString("driver_host");
-        databaseFile = driverConfig.getString("database_file");
         scenario = driverConfig.getString("scenario");
     }
 
@@ -84,5 +83,9 @@ public class DriverConfig {
 
     public String getScenario() {
         return scenario;
+    }
+
+    public String getTemp() {
+        return temp;
     }
 }
