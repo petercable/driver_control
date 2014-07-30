@@ -17,7 +17,6 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import net.lingala.zip4j.exception.ZipException;
 import org.apache.logging.log4j.LogManager;
 import org.controlsfx.control.action.Action;
 import org.controlsfx.dialog.Dialog;
@@ -50,6 +49,7 @@ public class ControlWindow {
     @FXML private TextArea driverLogArea;
     @FXML private Button refreshLogButton;
 
+    private TabPane sampleTabPane;
     private DriverModel model = new DriverModel();
     protected DriverControl controller;
     protected EventListener listener;
@@ -75,9 +75,17 @@ public class ControlWindow {
                     for (String sample : change.getAddedSubList()) {
                         log.debug("added sample type: " + sample);
                         // new sample type detected
-                        // create a new tab
+                        // create nested TabPane if necessary
+                        if (null == sampleTabPane) {
+                            Tab rootSampleDataTab = new Tab("Sample Data");
+                            tabPane.getTabs().add(rootSampleDataTab);
+                            sampleTabPane = new TabPane();
+                            rootSampleDataTab.setContent(sampleTabPane);
+                        }
+
+                        // create a new sample/stream tab
                         Tab tab = new Tab(sample);
-                        tabPane.getTabs().add(tab);
+                        sampleTabPane.getTabs().add(tab);
 
                         // create a tableview, add it to the tab
                         TableView<Map<String, Object>> tableView = new TableView<>(model.sampleLists.get(sample));
@@ -228,7 +236,7 @@ public class ControlWindow {
         return model.getConfig();
     }
 
-    public void launchDriver() throws IOException, InterruptedException, ZipException {
+    public void launchDriver() throws IOException, InterruptedException {
         driverProcess = DriverLauncher.launchDriver(model.getConfig());
         watchStream(driverProcess.getErrorStream());
         watchStream(driverProcess.getInputStream());
@@ -286,7 +294,7 @@ public class ControlWindow {
             if (response == Dialog.Actions.YES) {
                 try {
                     this.launchDriver();
-                } catch (IOException | InterruptedException | ZipException e1) {
+                } catch (IOException | InterruptedException e1) {
                     Dialogs.create()
                             .owner(null)
                             .title("Launch Driver")
