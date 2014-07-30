@@ -21,7 +21,7 @@ public class Main extends Application {
             // create window
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/ControlWindow.fxml"));
             Parent root = loader.load();
-            Scene scene = new Scene(root, 800, 600);
+            Scene scene = new Scene(root, 1000, 600);
             controlWindow = loader.getController();
             stage.setTitle("DriverControl");
             stage.setScene(scene);
@@ -41,9 +41,12 @@ public class Main extends Application {
     }
 
     public void stop() {
-        EventListener listener = controlWindow.listener;
-        if (listener != null)
-            listener.shutdown();
+        if (controlWindow.listener != null)
+            controlWindow.listener.shutdown();
+        if (controlWindow.driverProcess != null) {
+            controlWindow.shutdownDriver();
+            controlWindow.driverProcess.destroy();
+        }
         System.exit(0);
     }
 

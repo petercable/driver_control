@@ -51,10 +51,11 @@ public class ControlWindow {
     @FXML private Button refreshLogButton;
 
     private DriverModel model = new DriverModel();
-    private DriverControl controller;
+    protected DriverControl controller;
     protected EventListener listener;
     private PreloadDatabase preload;
     private static org.apache.logging.log4j.Logger log = LogManager.getLogger();
+    protected Process driverProcess = null;
 
     private ChangeListener<Boolean> settableListener = new ChangeListener<Boolean>() {
         @Override
@@ -228,9 +229,9 @@ public class ControlWindow {
     }
 
     public void launchDriver() throws IOException, InterruptedException, ZipException {
-        Process p = DriverLauncher.launchDriver(model.getConfig());
-        watchStream(p.getErrorStream());
-        watchStream(p.getInputStream());
+        driverProcess = DriverLauncher.launchDriver(model.getConfig());
+        watchStream(driverProcess.getErrorStream());
+        watchStream(driverProcess.getInputStream());
     }
 
     public void watchStream(InputStream is) {
@@ -440,7 +441,7 @@ public class ControlWindow {
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/HelpWindow.fxml"));
         try {
             Parent root = loader.load();
-            Scene scene = new Scene(root, 800, 600);
+            Scene scene = new Scene(root, 900, 600);
             Stage stage = new Stage();
             stage.setTitle("Help");
             stage.setScene(scene);

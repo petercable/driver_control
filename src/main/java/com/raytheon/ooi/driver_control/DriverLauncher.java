@@ -83,6 +83,7 @@ public class DriverLauncher {
 
     public static Process runDriver(String[] env, String scenario, String command, String event) throws IOException {
         String[] args = {"python", scenario + "/mi/main.py", "--command_port", command, "--event_port", event };
+        log.debug("Launching driver: {}", String.join(" ", args));
         return Runtime.getRuntime().exec(args, env);
     }
 }
