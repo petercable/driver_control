@@ -14,13 +14,11 @@ public class DriverLauncher {
     private DriverLauncher() {
     }
 
-    public static Process launchDriver(DriverConfig config)
-            throws IOException, ZipException, InterruptedException {
+    public static Process launchDriver(DriverConfig config) throws IOException, ZipException, InterruptedException {
         String scenarioPath = String.join("/", config.getTemp(), config.getScenario());
-        String[] env = getEnv(scenarioPath);
         unzipDriver(config.getEggUrl(), scenarioPath);
         patch_zmq_driver(scenarioPath);
-        return runDriver(env, scenarioPath, config.getCommandPortFile(), config.getEventPortFile());
+        return runDriver(getEnv(scenarioPath), scenarioPath, config.getCommandPortFile(), config.getEventPortFile());
     }
 
     public static String[] getEnv(String scenarioPath) {
@@ -72,11 +70,8 @@ public class DriverLauncher {
                 String.format("sed -i .bak s/INFO/DEBUG/g %s/res/config/mi-logging.yml", scenarioPath),
                 String.format("cp %s/res/config/mi-logging.yml %s/mi/mi-logging.yml", scenarioPath, scenarioPath)
         };
-        Arrays.asList(commands).forEach(log::debug);
         for (String command: commands) {
-            log.debug("Executing command {}", command);
             Runtime.getRuntime().exec(command).waitFor();
-            log.debug("Done");
         }
     }
 
@@ -86,11 +81,8 @@ public class DriverLauncher {
         Runtime.getRuntime().exec( new String[]{"unzip", "-o", eggUrl, "-d", scenarioPath }).waitFor();
     }
 
-    public static Process runDriver(String[] env, String scenarioPath, String commandPort, String eventPort)
-            throws IOException {
-        log.debug("Launching driver");
-        String[] command =
-                { "python", scenarioPath + "/mi/main.py", "--command_port", commandPort, "--event_port", eventPort };
-        return Runtime.getRuntime().exec(command, env);
+    public static Process runDriver(String[] env, String scenario, String command, String event) throws IOException {
+        String[] args = {"python", scenario + "/mi/main.py", "--command_port", command, "--event_port", event };
+        return Runtime.getRuntime().exec(args, env);
     }
 }

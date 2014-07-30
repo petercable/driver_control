@@ -133,12 +133,13 @@ public class ControlWindow {
 
     public void selectCommand(MouseEvent event) {
         if (! checkController()) return;
-            log.debug("received event: " + event);
             TableView source = (TableView) event.getSource();
             int row = source.getSelectionModel().getSelectedIndex();
-            ProtocolCommand command = model.commandList.get(row);
-            log.debug("maybe I clicked: " + command);
-            controller.execute(command.getName());
+            if (row != -1) {
+                ProtocolCommand command = model.commandList.get(row);
+                log.debug("Clicked: " + command);
+                controller.execute(command.getName());
+            }
     }
 
     public void sendParams() {
