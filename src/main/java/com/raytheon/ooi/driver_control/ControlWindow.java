@@ -229,6 +229,10 @@ public class ControlWindow {
     }
 
     public void launchDriver() throws IOException, InterruptedException, ZipException {
+        if (driverProcess != null) {
+            shutdownDriver();
+            driverProcess.destroy();
+        }
         driverProcess = DriverLauncher.launchDriver(model.getConfig());
         watchStream(driverProcess.getErrorStream());
         watchStream(driverProcess.getInputStream());
