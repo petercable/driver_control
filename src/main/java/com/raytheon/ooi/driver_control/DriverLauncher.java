@@ -1,6 +1,5 @@
 package com.raytheon.ooi.driver_control;
 
-import net.lingala.zip4j.exception.ZipException;
 import org.apache.logging.log4j.LogManager;
 import org.controlsfx.dialog.Dialogs;
 
@@ -14,7 +13,7 @@ public class DriverLauncher {
     private DriverLauncher() {
     }
 
-    public static Process launchDriver(DriverConfig config) throws IOException, ZipException, InterruptedException {
+    public static Process launchDriver(DriverConfig config) throws IOException, InterruptedException {
         String scenarioPath = String.join("/", config.getTemp(), config.getScenario());
         unzipDriver(config.getEggUrl(), scenarioPath);
         patch_zmq_driver(scenarioPath);
@@ -76,7 +75,7 @@ public class DriverLauncher {
     }
 
     public static void unzipDriver(String eggUrl, String scenarioPath)
-            throws IOException, ZipException, InterruptedException {
+            throws IOException, InterruptedException {
         log.debug("Unzipping driver");
         Runtime.getRuntime().exec( new String[]{"unzip", "-o", eggUrl, "-d", scenarioPath }).waitFor();
     }
