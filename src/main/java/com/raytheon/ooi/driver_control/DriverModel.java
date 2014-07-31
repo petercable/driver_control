@@ -1,5 +1,6 @@
 package com.raytheon.ooi.driver_control;
 
+import javafx.application.Platform;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -130,17 +131,18 @@ public class DriverModel {
 
     protected void publishSample(Map<String, Object> sample) {
         String streamName = (String) sample.get(DriverSampleFactory.STREAM_NAME);
-
-        if (!sampleLists.containsKey(streamName)) {
-            sampleLists.put(streamName, FXCollections.observableArrayList(new ArrayList<Map<String, Object>>()));
-            sampleTypes.add(streamName);
-        }
-        try {
-            List<Map<String, Object>> samples = sampleLists.get(streamName);
-            if (samples != null) samples.add(sample);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        Platform.runLater(()->{
+            if (!sampleLists.containsKey(streamName)) {
+                sampleLists.put(streamName, FXCollections.observableArrayList(new ArrayList<Map<String, Object>>()));
+                sampleTypes.add(streamName);
+            }
+            try {
+                List<Map<String, Object>> samples = sampleLists.get(streamName);
+                if (samples != null) samples.add(sample);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
     }
 
     public boolean getParamsSettable() {

@@ -50,7 +50,7 @@ public class PreloadDatabase {
         try (Statement stmt = connection.createStatement()) {
             String sql = String.format(
                     "SELECT name FROM parameterdictionary " +
-                    "WHERE scenario='%s';", scenario);
+                    "WHERE scenario like '%%%s%%';", scenario);
             ResultSet rs = stmt.executeQuery(sql);
             while (rs.next()) {
                 String name = rs.getString("name");
