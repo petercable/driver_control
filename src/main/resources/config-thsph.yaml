@@ -1,0 +1,11 @@
+driver_config:
+  driver_host: localhost
+  egg_url: /Users/danmergens/Workspace/eggs/um_thsph_ooicore-1.1.2-py2.7.egg
+  scenario: THSPH_A
+port_agent_config:
+  addr: rsn-port-agent-test.oceanobservatories.org
+  port: 13022
+  cmd_port: 12022
+startup_config:
+  parameters:
+    SampleInterval: 6
