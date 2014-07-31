@@ -1,0 +1,10 @@
+driver_config:
+  driver_host: localhost
+  egg_url: /Users/danmergens/Workspace/eggs/trhph/uw_bars_ooicore-0.0.4-py2.7.egg
+  scenario: TRHPH_A
+port_agent_config:
+  addr: rsn-port-agent-test.oceanobservatories.org
+  port: 13008
+  cmd_port: 12008
+startup_config:
+  parameters:
