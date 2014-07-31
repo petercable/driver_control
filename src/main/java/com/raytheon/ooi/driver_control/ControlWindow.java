@@ -433,6 +433,7 @@ public class ControlWindow {
                         case "float32":
                             if (!(value instanceof Double)) {
                                 log.error("Non floating point value found in FP field");
+                                break;
                             }
                             if ((Double) value > Float.MAX_VALUE)
                                 log.error("Oversized FP value found in FP field");
