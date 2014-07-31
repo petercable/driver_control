@@ -5,6 +5,8 @@ import org.controlsfx.dialog.Dialogs;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 
 public class DriverLauncher {
@@ -76,6 +78,10 @@ public class DriverLauncher {
 
     public static void unzipDriver(String eggUrl, String scenarioPath)
             throws IOException, InterruptedException {
+        if (Files.exists(Paths.get(scenarioPath))) {
+            log.debug("Driver already unpacked, skipping unzip...");
+            return;
+        }
         log.debug("Unzipping driver");
         Runtime.getRuntime().exec( new String[]{"unzip", "-o", eggUrl, "-d", scenarioPath }).waitFor();
     }
