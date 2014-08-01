@@ -18,7 +18,6 @@ public class DriverLauncher {
     public static Process launchDriver(DriverConfig config) throws IOException, InterruptedException {
         String scenarioPath = String.join("/", config.getTemp(), config.getScenario());
         unzipDriver(config.getEggUrl(), scenarioPath);
-        patch_zmq_driver(scenarioPath);
         return runDriver(getEnv(scenarioPath), scenarioPath, config.getCommandPortFile(), config.getEventPortFile());
     }
 
@@ -68,7 +67,13 @@ public class DriverLauncher {
         log.debug("Patching zmq_driver to use JSON");
         String[] commands = {
                 String.format("sed -i .bak s/pyobj/json/g %s/mi/core/instrument/zmq_driver_process.py", scenarioPath),
+                String.format("sed -i .bak 's/if isinstance(addr, str) and//g' %s/mi/core/instrument/zmq_driver_process.py", scenarioPath),
                 String.format("sed -i .bak s/INFO/DEBUG/g %s/res/config/mi-logging.yml", scenarioPath),
+                String.format("sed -i .bak 's/except IndexError:\n                    " +
+                        "time.sleep(.1)/except Exception as e:\n                    " +
+                        "time.sleep(.1)\n                    " +
+                        "log.debug(\"Exception: %%s\", e)/g' " +
+                        "%s/mi/core/instrument/zmq_driver_process.py", scenarioPath),
                 String.format("cp %s/res/config/mi-logging.yml %s/mi/mi-logging.yml", scenarioPath, scenarioPath)
         };
         for (String command: commands) {
@@ -84,6 +89,7 @@ public class DriverLauncher {
         }
         log.debug("Unzipping driver");
         Runtime.getRuntime().exec( new String[]{"unzip", "-o", eggUrl, "-d", scenarioPath }).waitFor();
+        patch_zmq_driver(scenarioPath);
     }
 
     public static Process runDriver(String[] env, String scenario, String command, String event) throws IOException {

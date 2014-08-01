@@ -7,7 +7,6 @@ import org.yaml.snakeyaml.Yaml;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -32,7 +31,7 @@ public class DriverConfig {
         // open the file, parse the config
         Path path = Paths.get(file.toURI());
         Yaml yaml = new Yaml();
-        Map map = (Map) yaml.load(new InputStreamReader(Files.newInputStream(path), "ASCII"));
+        Map map = (Map) yaml.load(Files.newInputStream(path));
         JSONObject config = new JSONObject(map);
 
         portAgentConfig = config.getJSONObject("port_agent_config");

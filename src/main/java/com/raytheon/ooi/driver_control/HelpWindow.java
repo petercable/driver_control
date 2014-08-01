@@ -34,10 +34,10 @@ public class HelpWindow {
     }
 
     protected void load() {
-        URL location = getClass().getResource("/Readme.md");
+        URL location = getClass().getResource("/README.md");
         try ( InputStream is = location.openStream() )
         {
-            File homePage = File.createTempFile("Readme", ".html");
+            File homePage = File.createTempFile("README", ".html");
             homePage.deleteOnExit();
             String html = new Markdown4jProcessor().process(is);
             Files.write(Paths.get(homePage.toURI()), html.getBytes());

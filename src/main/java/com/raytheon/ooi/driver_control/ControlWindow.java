@@ -1,5 +1,7 @@
 package com.raytheon.ooi.driver_control;
 
+import com.raytheon.ooi.preload.PreloadDatabase;
+import com.raytheon.ooi.preload.SqliteConnectionFactory;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -84,6 +86,7 @@ public class ControlWindow {
                         }
 
                         // create a new sample/stream tab
+                        if (sample.equals("raw")) continue;
                         Tab tab = new Tab(sample);
                         sampleTabPane.getTabs().add(tab);
 
@@ -207,8 +210,8 @@ public class ControlWindow {
             model.setConfig(config);
             console.appendText(config.toString());
             try {
-                preload = new PreloadDatabase(SqliteConnectionFactory.getConnection(config.getDatabaseFile()));
-            } catch (SQLException | ClassNotFoundException e) {
+                preload = new PreloadDatabase(SqliteConnectionFactory.getConnection(config));
+            } catch (SQLException | ClassNotFoundException | IOException | InterruptedException e) {
                 Dialogs.create()
                         .owner(null)
                         .title("Preload Database")
@@ -244,11 +247,11 @@ public class ControlWindow {
         }
 
         driverProcess = DriverLauncher.launchDriver(model.getConfig());
-        watchStream(driverProcess.getErrorStream());
-        watchStream(driverProcess.getInputStream());
+        watchStream(driverProcess.getErrorStream(), "STDERR");
+        watchStream(driverProcess.getInputStream(), "STDOUT");
     }
 
-    public void watchStream(InputStream is) {
+    public void watchStream(InputStream is, String name) {
         Thread t = new Thread(() -> {
             BufferedReader r = new BufferedReader(new InputStreamReader(is));
             while (true) {
@@ -261,7 +264,7 @@ public class ControlWindow {
                     e.printStackTrace();
                 }
                 if (joiner.length() > 0)
-                    Platform.runLater(() -> driverLogArea.appendText(joiner.toString()));
+                    //Platform.runLater(() -> driverLogArea.appendText(joiner.toString()));
 
                 try {
                     TimeUnit.MILLISECONDS.sleep(100);
@@ -270,6 +273,7 @@ public class ControlWindow {
                 }
             }
         });
+        t.setName(name);
         t.setDaemon(true);
         t.start();
     }
