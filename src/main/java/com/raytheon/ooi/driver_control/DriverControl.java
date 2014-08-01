@@ -1,6 +1,7 @@
 package com.raytheon.ooi.driver_control;
 
 import javafx.application.Platform;
+import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
@@ -9,16 +10,16 @@ import org.json.JSONObject;
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
 
 public class DriverControl {
     private final ZMQ.Socket command_socket;
-    private static Logger log = LogManager.getLogger();
+    private static Logger log = LogManager.getLogger("DriverControl");
     private DriverModel model;
     private volatile boolean isCommanding = false;
-    private ExecutorService executor = Executors.newSingleThreadExecutor();
+    private ExecutorService executor;
+    private ScheduledExecutorService scheduler;
+    private final String busy = "busy processing previous command";
 
     public DriverControl(String host, int port, DriverModel model) {
         this.model = model;
@@ -27,6 +28,23 @@ public class DriverControl {
         ZContext context = new ZContext();
         command_socket = context.createSocket(ZMQ.REQ);
         command_socket.connect(url);
+        BasicThreadFactory factory = new BasicThreadFactory.Builder()
+                .namingPattern("controllerPool-%d")
+                .daemon(true)
+                .priority(Thread.NORM_PRIORITY)
+                .build();
+        BasicThreadFactory scheduleFactory = new BasicThreadFactory.Builder()
+                .namingPattern("controllerScheduler")
+                .daemon(true)
+                .priority(Thread.NORM_PRIORITY)
+                .build();
+        executor = Executors.newCachedThreadPool(factory);
+        getMetadata();
+        scheduler = Executors.newSingleThreadScheduledExecutor(scheduleFactory);
+        scheduler.scheduleAtFixedRate(this::ping, 0, 10, TimeUnit.SECONDS);
+        scheduler.scheduleAtFixedRate(this::getCapabilities, 3, 10, TimeUnit.SECONDS);
+        scheduler.scheduleAtFixedRate(this::getProtocolState, 6, 10, TimeUnit.SECONDS);
+        Platform.runLater(()->model.setConnection("CONNECTED"));
         log.debug("Command socket connected! ({})", url);
     }
 
@@ -88,11 +106,18 @@ public class DriverControl {
             reply = command_socket.recvStr();
         } finally {
             isCommanding = false;
+            Platform.runLater(()->model.setConnection("IDLE"));
         }
 
         log.debug("receive loop complete, reply: {}", reply);
 
-        if (reply != null) {
+        if (reply == null) {
+            // No response from instrument, set to disconnected
+            Platform.runLater(()-> {
+                model.setStatus("NO REPLY FROM INSTRUMENT");
+                model.setConnection("DISCONNECTED");
+            });
+        } else {
             log.debug("received reply: {}", reply);
             if (reply.startsWith("[")) {
                 JSONArray possibleException = new JSONArray(reply);
@@ -104,7 +129,6 @@ public class DriverControl {
             if (reply.startsWith("\"")) {
                 reply = reply.substring(1, reply.length() - 1);
             }
-            log.debug("about to switch: {}", command);
             switch (command) {
                 case GET_CONFIG_METADATA:
                     final JSONObject metaData = new JSONObject(reply.replace("\\\"", "\""));
@@ -135,15 +159,11 @@ public class DriverControl {
                     });
                     break;
                 default:
-                    log.debug("hit default in switch statement");
+                    log.trace("hit default in switch statement");
                     Platform.runLater(() -> model.setStatus(""));
                     break;
             }
-        } else {
-            log.debug("no reply received!");
-            Platform.runLater(() -> model.setStatus("missing expected reply"));
         }
-        log.debug(reply);
         return reply;
     }
 
@@ -159,10 +179,11 @@ public class DriverControl {
                     command.toString());
             log.debug(status);
             Platform.runLater(() -> model.setStatus(status));
-            return executor.submit(() -> "busy processing previous command");
+            return executor.submit(() -> busy);
         }
 
         isCommanding = true;
+        Platform.runLater(()->model.setConnection("BUSY"));
         return executor.submit(() -> this._sendCommand(command, timeout, args));
     }
 

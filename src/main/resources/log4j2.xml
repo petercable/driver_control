@@ -1,12 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration status="WARN">
     <Properties>
-        <property name="layout">%d{HH:mm:ss.SSS} [%-10t] %-5level %logger{36} - %msg%n</property>
+        <property name="layout">%d{yyyy-MM-dd HH:mm:ss,SSS} %-8level %logger{36} [%-10t] - %msg%n</property>
+        <property name="filename">driver_control.log</property>
     </Properties>
     <Appenders>
         <Console name="Console" target="SYSTEM_OUT">
             <PatternLayout pattern="${layout}"/>
         </Console>
+        <File name="File" fileName="${filename}">
+            <PatternLayout pattern="${layout}"/>
+        </File>
     </Appenders>
     <Loggers>
         <Root level="DEBUG">

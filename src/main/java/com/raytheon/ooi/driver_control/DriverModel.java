@@ -13,17 +13,22 @@ import org.json.JSONObject;
 import java.util.*;
 
 public class DriverModel {
+    private DriverConfig config;
+    private static Logger log = LogManager.getLogger("DriverModel");
+
     protected final ObservableList<ProtocolCommand> commandList = FXCollections.observableArrayList();
     protected final ObservableList<Parameter> paramList = FXCollections.observableArrayList();
     protected final ObservableList<String> sampleTypes = FXCollections.observableArrayList();
+
     protected Map<String, ObservableList<Map<String, Object>>> sampleLists = new HashMap<>();
-    private static Logger log = LogManager.getLogger();
-    private Map<String, ProtocolCommand> commands = new HashMap<>();
+    protected Map<String, ProtocolCommand> commands = new HashMap<>();
     protected Map<String, Parameter> parameters = new HashMap<>();
+
     private SimpleStringProperty state = new SimpleStringProperty();
-    private SimpleBooleanProperty paramsSettable = new SimpleBooleanProperty();
-    private DriverConfig config;
     private SimpleStringProperty status = new SimpleStringProperty();
+    private SimpleStringProperty connection = new SimpleStringProperty();
+
+    private SimpleBooleanProperty paramsSettable = new SimpleBooleanProperty();
 
     public DriverModel() {
         log.debug("Created driver model");
@@ -120,9 +125,11 @@ public class DriverModel {
                 String value = getString(params, name);
                 if (name != null) {
                     Parameter param = parameters.get(name);
-                    if (!Objects.equals(param.getValue(), value)) {
-                        log.debug("UPDATED PARAM: " + name + " VALUE: " + value);
-                        param.setValue(value);
+                    if (param != null) {
+                        if (!Objects.equals(param.getValue(), value)) {
+                            log.debug("UPDATED PARAM: " + name + " VALUE: " + value);
+                            param.setValue(value);
+                        }
                     }
                 }
             }
@@ -175,5 +182,17 @@ public class DriverModel {
 
     public SimpleStringProperty getStatusProperty() {
         return status;
+    }
+
+    public String getConnection() {
+        return connection.get();
+    }
+
+    public void setConnection(String connection) {
+        this.connection.set(connection);
+    }
+
+    public SimpleStringProperty getConnectionProperty() {
+        return connection;
     }
 }

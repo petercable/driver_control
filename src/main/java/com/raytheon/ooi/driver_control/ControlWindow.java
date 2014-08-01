@@ -25,14 +25,14 @@ import org.controlsfx.dialog.Dialog;
 import org.controlsfx.dialog.Dialogs;
 import org.json.JSONObject;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 
 public class ControlWindow {
     @FXML AnchorPane root;
@@ -46,6 +46,7 @@ public class ControlWindow {
     @FXML public TextArea console;
     @FXML private TextField stateField;
     @FXML private TextField statusField;
+    @FXML private TextField connectionStatusField;
     @FXML private Button sendParamButton;
     @FXML private TabPane tabPane;
     @FXML private TextArea driverLogArea;
@@ -66,6 +67,13 @@ public class ControlWindow {
                     parameterNewValueColumn.setEditable(observableValue.getValue());
                     sendParamButton.setVisible(observableValue.getValue());
                 });
+        }
+    };
+
+    private ChangeListener<String> connectionChangeListener = new ChangeListener<String>() {
+        @Override
+        public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
+            Platform.runLater(()->connectionStatusField.setText(newValue));
         }
     };
 
@@ -135,6 +143,7 @@ public class ControlWindow {
 
         this.model.getParamsSettableProperty().addListener(settableListener);
         this.model.sampleTypes.addListener(sampleChangeListener);
+        this.model.getConnectionProperty().addListener(connectionChangeListener);
     }
 
     private int getPort(String filename) throws Exception {
@@ -245,37 +254,7 @@ public class ControlWindow {
             shutdownDriver();
             driverProcess.destroy();
         }
-
         driverProcess = DriverLauncher.launchDriver(model.getConfig());
-        watchStream(driverProcess.getErrorStream(), "STDERR");
-        watchStream(driverProcess.getInputStream(), "STDOUT");
-    }
-
-    public void watchStream(InputStream is, String name) {
-        Thread t = new Thread(() -> {
-            BufferedReader r = new BufferedReader(new InputStreamReader(is));
-            while (true) {
-                StringJoiner joiner = new StringJoiner("\n");
-                try {
-                    while (r.ready()) {
-                        joiner.add(r.readLine());
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                if (joiner.length() > 0)
-                    //Platform.runLater(() -> driverLogArea.appendText(joiner.toString()));
-
-                try {
-                    TimeUnit.MILLISECONDS.sleep(100);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        });
-        t.setName(name);
-        t.setDaemon(true);
-        t.start();
     }
 
     public void zmqConnect() {

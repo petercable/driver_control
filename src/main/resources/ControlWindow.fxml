@@ -6,62 +6,53 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.control.*?>
 
-<AnchorPane fx:id="root" prefHeight="520.0" prefWidth="813.0" xmlns="http://javafx.com/javafx/8"
-            xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.raytheon.ooi.driver_control.ControlWindow">
+<AnchorPane fx:id="root" prefHeight="520.0" prefWidth="813.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.raytheon.ooi.driver_control.ControlWindow">
     <children>
-        <VBox prefHeight="529.0" prefWidth="813.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0"
-              AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+        <VBox prefHeight="529.0" prefWidth="813.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
             <children>
                 <MenuBar minHeight="29.0">
                     <menus>
                         <Menu text="File">
                             <items>
-                                <MenuItem onAction="#loadConfig" text="Load Config"/>
-                                <MenuItem onAction="#exit" text="Exit"/>
+                                <MenuItem onAction="#loadConfig" text="Load Config" />
+                                <MenuItem onAction="#exit" text="Exit" />
                             </items>
                         </Menu>
                         <Menu text="Driver">
                             <items>
-                                <MenuItem onAction="#configure" text="Configure"/>
-                                <MenuItem onAction="#connect" text="Connect to Instrument"/>
-                                <MenuItem onAction="#discover" text="Discover"/>
-                                <MenuItem onAction="#shutdownDriver" text="Shutdown"/>
+                                <MenuItem onAction="#configure" text="Configure" />
+                                <MenuItem onAction="#connect" text="Connect to Instrument" />
+                                <MenuItem onAction="#discover" text="Discover" />
+                                <MenuItem onAction="#shutdownDriver" text="Shutdown" />
                                 <SeparatorMenuItem />
-                                <MenuItem onAction="#getCapabilities" text="Get Capabilities"/>
-                                <MenuItem onAction="#getState" text="Get State"/>
-                                <MenuItem onAction="#getParams" text="Get Parameters"/>
+                                <MenuItem onAction="#getCapabilities" text="Get Capabilities" />
+                                <MenuItem onAction="#getState" text="Get State" />
+                                <MenuItem onAction="#getParams" text="Get Parameters" />
                             </items>
                         </Menu>
                         <Menu text="Test">
                             <items>
-                                <MenuItem onAction="#launchDriver" text="Launch Driver"/>
-                                <MenuItem onAction="#zmqConnect" text="Connect to Driver"/>
+                                <MenuItem onAction="#launchDriver" text="Launch Driver" />
+                                <MenuItem onAction="#zmqConnect" text="Connect to Driver" />
                                 <SeparatorMenuItem />
-                                <MenuItem onAction="#validateStreams" text="Validate Streams"/>
+                                <MenuItem onAction="#validateStreams" text="Validate Streams" />
                             </items>
                         </Menu>
                         <Menu text="Help">
                             <items>
-                                <MenuItem onAction="#displayTestProcedures"
-                                          text="Test Procedures"/>
+                                <MenuItem onAction="#displayTestProcedures" text="Test Procedures" />
                             </items>
                         </Menu>
                     </menus>
                 </MenuBar>
-                <TabPane fx:id="tabPane" minHeight="100.0" minWidth="100.0" tabClosingPolicy="UNAVAILABLE"
-                         VBox.vgrow="ALWAYS">
+                <TabPane fx:id="tabPane" minHeight="100.0" minWidth="100.0" tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS">
                     <tabs>
                         <Tab text="Commands">
                             <content>
-                                <TableView fx:id="commandTable" layoutX="14.0" layoutY="14.0" minHeight="100.0"
-                                           onMouseClicked="#selectCommand" AnchorPane.bottomAnchor="0.0"
-                                           AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0"
-                                           AnchorPane.topAnchor="0.0">
+                                <TableView fx:id="commandTable" layoutX="14.0" layoutY="14.0" minHeight="100.0" onMouseClicked="#selectCommand" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                                     <columns>
-                                        <TableColumn fx:id="commandColumn" minWidth="200.0" prefWidth="300.0"
-                                                     text="Command"/>
-                                        <TableColumn fx:id="commandNameColumn" minWidth="400.0" prefWidth="-1.0"
-                                                     text="Description"/>
+                                        <TableColumn fx:id="commandColumn" minWidth="200.0" prefWidth="300.0" text="Command" />
+                                        <TableColumn fx:id="commandNameColumn" minWidth="400.0" prefWidth="-1.0" text="Description" />
                                     </columns>
                                 </TableView>
                             </content>
@@ -70,26 +61,16 @@
                             <content>
                                 <VBox>
                                     <children>
-                                        <TableView fx:id="parameterTable" editable="true" layoutX="14.0" layoutY="14.0"
-                                                   AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0"
-                                                   AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0"
-                                                   VBox.vgrow="ALWAYS">
+                                        <TableView fx:id="parameterTable" editable="true" layoutX="14.0" layoutY="14.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" VBox.vgrow="ALWAYS">
                                             <columns>
-                                                <TableColumn fx:id="parameterNameColumn" editable="false"
-                                                             minWidth="200.0" prefWidth="-1.0" text="Parameter"/>
-                                                <TableColumn fx:id="parameterValueColumn" minWidth="20.0"
-                                                             prefWidth="150.0" text="Value"/>
-                                                <TableColumn fx:id="parameterNewValueColumn" minWidth="20.0"
-                                                             prefWidth="150.0" text="New Value"/>
+                                                <TableColumn fx:id="parameterNameColumn" editable="false" minWidth="200.0" prefWidth="-1.0" text="Parameter" />
+                                                <TableColumn fx:id="parameterValueColumn" minWidth="20.0" prefWidth="150.0" text="Value" />
+                                                <TableColumn fx:id="parameterNewValueColumn" minWidth="20.0" prefWidth="150.0" text="New Value" />
                                             </columns>
                                         </TableView>
                                         <HBox alignment="TOP_RIGHT" VBox.vgrow="NEVER">
                                             <children>
-                                                <Button fx:id="sendParamButton" maxHeight="-Infinity"
-                                                        minHeight="-Infinity" 
-                                                        onMouseClicked="#sendParams" prefHeight="26.0" text="Send"
-                                                        translateZ="1.0" AnchorPane.bottomAnchor="2.0"
-                                                        AnchorPane.rightAnchor="2.0" VBox.vgrow="NEVER"/>
+                                                <Button fx:id="sendParamButton" maxHeight="-Infinity" minHeight="-Infinity" onMouseClicked="#sendParams" prefHeight="26.0" text="Send" translateZ="1.0" AnchorPane.bottomAnchor="2.0" AnchorPane.rightAnchor="2.0" VBox.vgrow="NEVER" />
                                             </children>
                                         </HBox>
                                     </children>
@@ -98,20 +79,14 @@
                         </Tab>
                         <Tab text="Console">
                             <content>
-                                <TextArea fx:id="console" layoutY="-28.0" AnchorPane.bottomAnchor="0.0"
-                                          AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0"
-                                          AnchorPane.topAnchor="0.0"/>
+                                <TextArea fx:id="console" layoutY="-28.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
                             </content>
                         </Tab>
                         <Tab text="Driver Log">
                             <content>
                                 <VBox>
                                     <children>
-                                        <TextArea fx:id="driverLogArea" editable="false" prefHeight="407.0"
-                                                  prefWidth="813.0" text="Driver has not yet been started."
-                                                  wrapText="true" AnchorPane.bottomAnchor="25.0"
-                                                  AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0"
-                                                  AnchorPane.topAnchor="0.0" VBox.vgrow="ALWAYS">
+                                        <TextArea fx:id="driverLogArea" editable="false" prefHeight="407.0" prefWidth="813.0" text="Driver has not yet been started." wrapText="true" AnchorPane.bottomAnchor="25.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" VBox.vgrow="ALWAYS">
                                         </TextArea>
                                     </children>
                                 </VBox>
@@ -121,9 +96,9 @@
                 </TabPane>
                 <HBox minHeight="26.0">
                     <children>
-                        <TextField fx:id="stateField" editable="false" minHeight="26.0" prefHeight="26.0"
-                                   prefWidth="238.0" HBox.hgrow="NEVER"/>
-                        <TextField fx:id="statusField" editable="false" GridPane.columnIndex="1" HBox.hgrow="ALWAYS"/>
+                  <TextField fx:id="connectionStatusField" editable="false" prefWidth="200.0" />
+                        <TextField fx:id="stateField" editable="false" prefWidth="230.0" HBox.hgrow="NEVER" />
+                        <TextField fx:id="statusField" editable="false" GridPane.columnIndex="1" HBox.hgrow="ALWAYS" />
                     </children>
                 </HBox>
             </children>
