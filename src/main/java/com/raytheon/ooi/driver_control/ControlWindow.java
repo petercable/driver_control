@@ -394,41 +394,45 @@ public class ControlWindow {
                 else {
                     Object value = sample.get(paramName);
                     log.debug("Testing {} value: {}", paramName, value);
-                    switch (parameter.getValueEncoding()) {
-                        case "int8":
-                            if (!(value instanceof Integer)) {
-                                log.error("Non integral value found in Integer field");
-                                break;
-                            }
-                            if ((Integer) value > Byte.MAX_VALUE)
-                                log.error("Oversized integral value found in Integer field");
-                        case "int16":
-                            if ((Integer) value > Short.MAX_VALUE)
-                                log.error("Oversized integral value found in Integer field");
-                        case "int32":
-                            if ((Integer) value > Integer.MAX_VALUE)
-                                log.error("Oversized integral value found in Integer field");
-                            break;
-                        case "float32":
-                            if (!(value instanceof Double)) {
-                                if (value instanceof Integer) {
-                                    value = ((Integer)value).doubleValue();
-                                } else {
-                                    log.error("Non floating point value found in FP field");
+                    if (parameter.getParameterType().equals("quantity")) {
+                        switch (parameter.getValueEncoding()) {
+                            case "int32":
+                                if (!(value instanceof Integer)) {
+                                    log.error("Non integral value found in Integer field");
                                     break;
                                 }
-                            }
-                            if ((Double) value > Float.MAX_VALUE)
-                                log.error("Oversized FP value found in FP field");
-                        case "float64":
-                            if ((Double) value > Double.MAX_VALUE)
-                                log.error("Oversized FP value found in FP field");
-                            break;
-                        case "str":
-                            break;
-                        default:
-                            log.error("UNHANDLED VALUE ENCODING {} {}", paramName, parameter.getValueEncoding());
-                            break;
+                                if ((Integer) value > Integer.MAX_VALUE)
+                                    log.error("Oversized (>int32) integral value found in Integer field");
+                            case "int16":
+                                if ((Integer) value > Short.MAX_VALUE)
+                                    log.error("Oversized (>int16) integral value found in Integer field");
+                            case "int8":
+                                if ((Integer) value > Byte.MAX_VALUE)
+                                    log.error("Oversized (>int8) integral value found in Integer field");
+                                break;
+                            case "float64":
+                                if (!(value instanceof Double)) {
+                                    if (value instanceof Integer) {
+                                        value = ((Integer) value).doubleValue();
+                                    } else {
+                                        log.error("Non floating point value found in FP field");
+                                        break;
+                                    }
+                                }
+                                if ((Double) value > Double.MAX_VALUE)
+                                    log.error("Oversized FP (double) value found in FP field");
+                            case "float32":
+                                if ((Double) value > Float.MAX_VALUE)
+                                    log.error("Oversized FP (float) value found in FP field");
+                                break;
+                            case "str":
+                                break;
+                            default:
+                                log.error("UNHANDLED VALUE ENCODING {} {}", paramName, parameter.getValueEncoding());
+                                break;
+                        }
+                    } else {
+                        log.debug("Non-quantity field [{}] not checked (type={})", paramName, parameter.getParameterType());
                     }
                 }
             }
