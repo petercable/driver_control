@@ -254,7 +254,7 @@ public class ControlWindow {
             shutdownDriver();
             driverProcess.destroy();
         }
-        driverProcess = DriverLauncher.launchDriver(model.getConfig());
+        driverProcess = DriverLauncher.launchDriver(model.getConfig(), preload);
     }
 
     public void zmqConnect() {

@@ -1,12 +1,14 @@
 package com.raytheon.ooi.driver_control;
 
+import com.raytheon.ooi.preload.PreloadDatabase;
 import org.apache.logging.log4j.LogManager;
+import org.apache.poi.util.IOUtils;
 import org.controlsfx.dialog.Dialogs;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
+import java.net.URL;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 
@@ -16,10 +18,28 @@ public class DriverLauncher {
     private DriverLauncher() {
     }
 
-    public static Process launchDriver(DriverConfig config) throws IOException, InterruptedException {
+    public static Process launchDriver(DriverConfig config, PreloadDatabase db) throws IOException, InterruptedException {
         String scenarioPath = String.join("/", config.getTemp(), config.getScenario());
-        unzipDriver(config.getEggUrl(), scenarioPath);
+        String eggUrl = db.getEggUrl(config.getScenario());
+        String eggName = eggUrl.substring(eggUrl.lastIndexOf('/') + 1);
+        Path eggPath = Paths.get(config.getTemp(), eggName);
+
+        getEgg(eggUrl, eggName, eggPath);
+        unzipDriver(eggPath.toString(), scenarioPath);
         return runDriver(scenarioPath, config.getCommandPortFile(), config.getEventPortFile());
+    }
+
+    public static void getEgg(String eggUrl, String eggName, Path eggPath) throws IOException {
+        log.debug("Checking to see if we need to download the egg for this scenario...");
+        if (Files.exists(eggPath)) {
+            log.debug("Egg already exists...");
+        } else {
+            try (InputStream is = new URL(eggUrl).openStream(); OutputStream os = new FileOutputStream(eggPath.toFile())) {
+                log.debug("Downloading egg from {}...", eggUrl);
+                IOUtils.copy(is, os);
+                log.debug("Downloaded egg...");
+            }
+        }
     }
 
     public static Map<String, String> getEnv(String scenarioPath) {
@@ -91,24 +111,26 @@ public class DriverLauncher {
         }
     }
 
-    public static void unzipDriver(String eggUrl, String scenarioPath)
+    public static void unzipDriver(String eggPath, String scenarioPath)
             throws IOException, InterruptedException {
         if (Files.exists(Paths.get(scenarioPath))) {
             log.debug("Driver already unpacked, skipping unzip...");
             return;
         }
         log.debug("Unzipping driver");
-        Runtime.getRuntime().exec( new String[]{"unzip", "-o", eggUrl, "-d", scenarioPath }).waitFor();
+        Runtime.getRuntime().exec( new String[]{"unzip", "-o", eggPath, "-d", scenarioPath }).waitFor();
         patch_zmq_driver(scenarioPath);
     }
 
     public static Process runDriver(String scenarioPath, String command, String event) throws IOException {
-        String[] args = {"python", "mi/main.py", "--command_port", command, "--event_port", event };
+        String python = Paths.get(System.getenv("VIRTUAL_ENV"), "bin", "python").toString();
+        String[] args = {python, "mi/main.py", "--command_port", command, "--event_port", event };
         log.debug("Launching driver: {}", String.join(" ", args));
 
         ProcessBuilder pb = new ProcessBuilder(args);
         Map<String, String> environment = pb.environment();
         environment.putAll(getEnv(scenarioPath));
+        log.debug(environment);
         pb.directory(new File(scenarioPath));
         return pb.inheritIO().start();
     }

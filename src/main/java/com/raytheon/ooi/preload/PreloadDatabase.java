@@ -47,6 +47,19 @@ public class PreloadDatabase {
         }
     }
 
+    public String getEggUrl(String scenario) {
+        String result = null;
+        try (Statement stmt = connection.createStatement()) {
+            String sql = String.format("SELECT ia_driver_uri FROM instrumentagent WHERE scenario='%s'", scenario);
+            ResultSet rs = stmt.executeQuery(sql);
+            rs.next();
+            result = rs.getString("ia_driver_uri");
+        } catch (SQLException e) {
+            log.debug("exception getting EggUrl for scenario: {}, {}", scenario, e);
+        }
+        return result;
+    }
+
     private List<String> lookupScenario(String scenario) {
         List<String> streams = new LinkedList<>();
         try (Statement stmt = connection.createStatement()) {

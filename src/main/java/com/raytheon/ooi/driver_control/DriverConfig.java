@@ -17,7 +17,6 @@ public class DriverConfig {
     private static Logger log = LogManager.getLogger();
     private JSONObject portAgentConfig;
     private JSONObject startupConfig;
-    private String eggUrl;
     private String scenario;
 
     private final String host = "localhost";
@@ -37,7 +36,6 @@ public class DriverConfig {
         portAgentConfig = config.getJSONObject("port_agent_config");
         startupConfig = config.getJSONObject("startup_config");
         JSONObject driverConfig = config.getJSONObject("driver_config");
-        eggUrl = driverConfig.getString("egg_url");
         scenario = driverConfig.getString("scenario");
     }
 
@@ -47,10 +45,6 @@ public class DriverConfig {
 
     public String getStartupConfig() {
         return startupConfig.toString();
-    }
-
-    public String getEggUrl() {
-        return eggUrl;
     }
 
     public String getCommandPortFile() {
@@ -67,7 +61,6 @@ public class DriverConfig {
         joiner.add(portAgentConfig.toString(2));
         joiner.add("STARTUP CONFIG");
         joiner.add(startupConfig.toString(2));
-        joiner.add("EGG URL: " + eggUrl);
         joiner.add("COMMAND PORT FILE: " + commandPortFile);
         joiner.add("EVENT PORT FILE: " + eventPortFile);
         return joiner.toString();
