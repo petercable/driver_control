@@ -70,24 +70,9 @@
                                         </TableView>
                                         <HBox alignment="TOP_RIGHT" VBox.vgrow="NEVER">
                                             <children>
-                                                <Button fx:id="sendParamButton" maxHeight="-Infinity" minHeight="-Infinity" onMouseClicked="#sendParams" prefHeight="26.0" text="Send" translateZ="1.0" AnchorPane.bottomAnchor="2.0" AnchorPane.rightAnchor="2.0" VBox.vgrow="NEVER" />
+                                                <Button fx:id="sendParamButton" maxHeight="-Infinity" minHeight="-Infinity" onMouseClicked="#sendParams" prefHeight="26.0" text="Send"  AnchorPane.bottomAnchor="2.0" AnchorPane.rightAnchor="2.0" VBox.vgrow="NEVER" />
                                             </children>
                                         </HBox>
-                                    </children>
-                                </VBox>
-                            </content>
-                        </Tab>
-                        <Tab text="Console">
-                            <content>
-                                <TextArea fx:id="console" layoutY="-28.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
-                            </content>
-                        </Tab>
-                        <Tab text="Driver Log">
-                            <content>
-                                <VBox>
-                                    <children>
-                                        <TextArea fx:id="driverLogArea" editable="false" prefHeight="407.0" prefWidth="813.0" text="Driver has not yet been started." wrapText="true" AnchorPane.bottomAnchor="25.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" VBox.vgrow="ALWAYS">
-                                        </TextArea>
                                     </children>
                                 </VBox>
                             </content>

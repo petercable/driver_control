@@ -43,14 +43,11 @@ public class ControlWindow {
     @FXML private TableColumn<Parameter, String> parameterNameColumn;
     @FXML private TableColumn<Parameter, String> parameterValueColumn;
     @FXML private TableColumn<Parameter, String> parameterNewValueColumn;
-    @FXML public TextArea console;
     @FXML private TextField stateField;
     @FXML private TextField statusField;
     @FXML private TextField connectionStatusField;
     @FXML private Button sendParamButton;
     @FXML private TabPane tabPane;
-    @FXML private TextArea driverLogArea;
-    @FXML private Button refreshLogButton;
 
     private TabPane sampleTabPane;
     private DriverModel model = new DriverModel();
@@ -217,7 +214,6 @@ public class ControlWindow {
             }
 
             model.setConfig(config);
-            console.appendText(config.toString());
             try {
                 preload = new PreloadDatabase(SqliteConnectionFactory.getConnection(config));
             } catch (SQLException | ClassNotFoundException | IOException | InterruptedException e) {

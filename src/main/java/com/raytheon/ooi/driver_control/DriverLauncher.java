@@ -24,12 +24,12 @@ public class DriverLauncher {
         String eggName = eggUrl.substring(eggUrl.lastIndexOf('/') + 1);
         Path eggPath = Paths.get(config.getTemp(), eggName);
 
-        getEgg(eggUrl, eggName, eggPath);
+        getEgg(eggUrl, eggPath);
         unzipDriver(eggPath.toString(), scenarioPath);
         return runDriver(scenarioPath, config.getCommandPortFile(), config.getEventPortFile());
     }
 
-    public static void getEgg(String eggUrl, String eggName, Path eggPath) throws IOException {
+    public static void getEgg(String eggUrl, Path eggPath) throws IOException {
         log.debug("Checking to see if we need to download the egg for this scenario...");
         if (Files.exists(eggPath)) {
             log.debug("Egg already exists...");
