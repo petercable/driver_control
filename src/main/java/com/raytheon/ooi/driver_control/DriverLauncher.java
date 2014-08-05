@@ -97,7 +97,7 @@ public class DriverLauncher {
         log.debug("Patching zmq_driver to use JSON");
         String[] commands = {
                 String.format("sed -i .bak s/pyobj/json/g %s/mi/core/instrument/zmq_driver_process.py", scenarioPath),
-                String.format("sed -i .bak 's/if isinstance(addr, str) and//g' %s/mi/core/instrument/zmq_driver_process.py", scenarioPath),
+                String.format("sed -i .bak 's/if isinstance(addr, str) and//g' %s/mi/core/instrument/instrument_driver.py", scenarioPath),
                 String.format("sed -i .bak s/INFO/DEBUG/g %s/res/config/mi-logging.yml", scenarioPath),
                 String.format("sed -i .bak 's/except IndexError:\n                    " +
                         "time.sleep(.1)/except Exception as e:\n                    " +
@@ -123,8 +123,7 @@ public class DriverLauncher {
     }
 
     public static Process runDriver(String scenarioPath, String command, String event) throws IOException {
-        String python = Paths.get(System.getenv("VIRTUAL_ENV"), "bin", "python").toString();
-        String[] args = {python, "mi/main.py", "--command_port", command, "--event_port", event };
+        String[] args = {"python", "mi/main.py", "--command_port", command, "--event_port", event };
         log.debug("Launching driver: {}", String.join(" ", args));
 
         ProcessBuilder pb = new ProcessBuilder(args);

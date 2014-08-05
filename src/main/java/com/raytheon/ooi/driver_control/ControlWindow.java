@@ -107,7 +107,7 @@ public class ControlWindow {
                         for (String key: keys) {
                             TableColumn<Map<String, Object>, String> column = new TableColumn<>(key);
                             column.setCellValueFactory(new MapValueFactory(key));
-                            column.setPrefWidth(50.0);
+                            column.setPrefWidth(key.length() * 10);
                             tableView.getColumns().add(column);
                         }
                     }
@@ -262,7 +262,7 @@ public class ControlWindow {
             int eventPort = getPort(config.getEventPortFile());
             int commandPort = getPort(config.getCommandPortFile());
             controller = new DriverControl(host, commandPort, model);
-            listener = new EventListener(host, eventPort, model, controller);
+            listener = new EventListener(host, eventPort, model, controller, preload);
             listener.start();
             controller.getProtocolState().get();
             controller.getMetadata().get();

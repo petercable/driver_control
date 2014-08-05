@@ -183,7 +183,7 @@ public class DriverControl {
         }
 
         isCommanding = true;
-        Platform.runLater(()->model.setConnection("BUSY"));
+        Platform.runLater(()->model.setConnection(String.format("BUSY (%s)", command.toString())));
         return executor.submit(() -> this._sendCommand(command, timeout, args));
     }
 
