@@ -20,13 +20,14 @@ public class SqliteConnectionFactory {
 
     public static Connection getConnection(DriverConfig config) throws
             SQLException, ClassNotFoundException, IOException, InterruptedException {
-        if (!Files.exists(Paths.get(config.getDatabaseFile()))) {
+        if (!Files.exists(Paths.get(config.getTemp())))
+            Files.createDirectory(Paths.get(config.getTemp()));
+        if (!Files.exists(Paths.get(config.getDatabaseFile())))
             createDB(config);
-        }
 
-        if (!Files.exists(Paths.get(config.getDatabaseFile()))) {
+        if (!Files.exists(Paths.get(config.getDatabaseFile())))
             throw new SQLException("Database does not exist!");
-        }
+
         Connection c;
         Class.forName("org.sqlite.JDBC");
         c = DriverManager.getConnection("jdbc:sqlite:" + config.getDatabaseFile());

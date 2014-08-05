@@ -12,7 +12,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.StringJoiner;
@@ -94,26 +93,25 @@ public class DriverSampleFactory {
         for (int i=0; i<functionArgs.length(); i++) {
             String argName = functionArgs.getString(i);
             log.debug("index: {} argName: {} args: {} value: {}", i, argName, args, args.get(argName));
-            if (!args.containsKey(argName))
-                return 0;
-            Number val = args.get(argName);
-            if (val != null)
-                joiner.add(val.toString());
+            joiner.add(argName);
         }
-
-//        String[] command = {"python", "-c", String.format("'print \"HI!\" * 100; from %s import %s; print %s(%s)'",
-//                        df.getOwner(), df.getFunction(), df.getFunction(), joiner.toString())};
 
         try {
             Path ion_function = Files.createTempFile("ion_function", ".py");
             FileWriter writer = new FileWriter(ion_function.toFile());
+            // import numpy
+            writer.append("import numpy\n");
+            // import the correct function
             writer.append(String.format("from %s import %s\n", df.getOwner(), df.getFunction()));
+            // build the function inputs
+            for (String key: args.keySet()) {
+                writer.append(String.format("%s = numpy.array([%s])\n", key, args.get(key)));
+            }
             writer.append(String.format("print %s(%s)\n", df.getFunction(), joiner.toString()));
             writer.close();
             log.debug("ION_FUNCTION: {}", ion_function);
             String[] command = {"python", ion_function.toString()};
 
-            Arrays.asList(command).forEach(log::debug);
             ProcessBuilder pb = new ProcessBuilder(command);
             Map<String, String> environment = pb.environment();
             environment.putAll(DriverLauncher.getEnv("."));
@@ -131,7 +129,8 @@ public class DriverSampleFactory {
                 log.debug("No response from ion_functions...");
                 return 0;
             }
-            return Double.parseDouble(line);
+            JSONArray rvalue = new JSONArray(line);
+            return (Number) rvalue.get(0);
 
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
