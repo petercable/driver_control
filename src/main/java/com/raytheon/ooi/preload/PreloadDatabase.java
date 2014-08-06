@@ -119,7 +119,7 @@ public class PreloadDatabase {
 
     public DataParameter getParameterById(String id) {
         try (Statement stmt = connection.createStatement()) {
-            log.trace("Getting parameter_id: {}", id);
+            log.debug("Getting parameter_id: {}", id);
             String sql = String.format(
                     "SELECT name, parameter_type, value_encoding, " +
                             "parameter_function_id, parameter_function_map " +
