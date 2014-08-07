@@ -57,7 +57,11 @@ The following driver configuration file sets up testing for the TRHPH instrument
     export TEST_BASE=/path/to/marine/integrations
 ```
 
-> java -jar driver_control.jar                this opens the driver_control application
+**Launch Driver Control**
+
+```
+    java -jar driver_control.jar                this opens the driver_control application
+```
 
 Driver Config allows step by step execution of instrument driver commands. The protocol driver must be executed 
 in the following sequence:
