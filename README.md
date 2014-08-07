@@ -43,14 +43,14 @@ The following driver configuration file sets up testing for the TRHPH instrument
 # Driver Test
 
 
-** Do this once **
+**Do this once**
 
 ```
     workon ooi
     pip install openpyxl docopt
 ```
 
-** Do this in every new shell where you wish to run driver_control **
+**Do this in every new shell where you wish to run driver_control**
 
 ```
     workon ooi
