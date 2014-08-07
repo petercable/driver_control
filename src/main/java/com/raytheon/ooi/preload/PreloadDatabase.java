@@ -127,15 +127,18 @@ public class PreloadDatabase {
                             "WHERE id='%s';", id);
 
             ResultSet rs = stmt.executeQuery(sql);
-            DataParameter dp = new DataParameter(
-                    id,
-                    rs.getString("name"),
-                    rs.getString("parameter_type"),
-                    rs.getString("value_encoding"),
-                    rs.getString("parameter_function_id"),
-                    rs.getString("parameter_function_map"));
-            log.trace("Created DataParameter: {}", dp);
-            return dp;
+            if (rs.next()) {
+                DataParameter dp = new DataParameter(
+                        id,
+                        rs.getString("name"),
+                        rs.getString("parameter_type"),
+                        rs.getString("value_encoding"),
+                        rs.getString("parameter_function_id"),
+                        rs.getString("parameter_function_map"));
+                log.trace("Created DataParameter: {}", dp);
+                return dp;
+            }
+            return null;
         } catch (SQLException e) {
             log.debug("Exception: {}", e);
             return null;

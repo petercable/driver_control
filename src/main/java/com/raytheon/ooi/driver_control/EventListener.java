@@ -20,12 +20,14 @@ public class EventListener extends Thread {
     private DriverModel model;
     private DriverControl controller;
     private PreloadDatabase db;
+    private DriverConfig config;
     private static final String VALUE = "value";
 
-    public EventListener(String host, int port, DriverModel model, DriverControl controller, PreloadDatabase db) {
+    public EventListener(String host, int port, DriverModel model, DriverControl controller, PreloadDatabase db, DriverConfig config) {
         this.model = model;
         this.controller = controller;
         this.db = db;
+        this.config = config;
         log.debug("Initialize EventListener");
         context = new ZContext();
         event_socket = context.createSocket(ZMQ.SUB);
@@ -51,7 +53,7 @@ public class EventListener extends Thread {
                 String type = event.getString("type");
 
                 if (MessageTypes.SAMPLE.equals(type)) {
-                    Map<String, Object> sample = DriverSampleFactory.parseSample(event.getString(VALUE), db);
+                    Map<String, Object> sample = DriverSampleFactory.parseSample(event.getString(VALUE), db, config);
                     log.info("Received SAMPLE event: " + sample);
                     model.publishSample(sample);
                 } else if (MessageTypes.CONFIG_CHANGE.equals(type)) {

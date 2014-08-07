@@ -228,6 +228,28 @@ public class ControlWindow {
         }
     }
 
+    public void loadCoefficients() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Open Coefficient Config");
+        File file = fileChooser.showOpenDialog(root.getScene().getWindow());
+        loadCoefficients(file);
+    }
+
+    public void loadCoefficients(File file) {
+        log.debug("loading coefficients from file: {}", file);
+        if (file != null) {
+            try {
+                model.getConfig().setCoefficients(file);
+            } catch (IOException e) {
+                Dialogs.create()
+                        .owner(null)
+                        .title("Coefficient parse error")
+                        .message("Coefficient parse error, file must be valid csv...")
+                        .showException(e);
+            }
+        }
+    }
+
     public DriverConfig getConfig() {
         DriverConfig config = model.getConfig();
         if (config == null) {
@@ -262,7 +284,7 @@ public class ControlWindow {
             int eventPort = getPort(config.getEventPortFile());
             int commandPort = getPort(config.getCommandPortFile());
             controller = new DriverControl(host, commandPort, model);
-            listener = new EventListener(host, eventPort, model, controller, preload);
+            listener = new EventListener(host, eventPort, model, controller, preload, config);
             listener.start();
             controller.getProtocolState().get();
             controller.getMetadata().get();

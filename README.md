@@ -4,6 +4,9 @@ DriverControl provides an interface for testing of OOI instrument protocol drive
 
 # Setup
 
+You will need a working marine integrations environment prior to launching any drivers.
+See [https://github.com/ooici/marine-integrations](https://github.com/ooici/marine-integrations)
+
 ## Configuration File
 
 Prior to testing you must setup a configuration file containing the following yaml values:

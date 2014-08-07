@@ -1,15 +1,20 @@
 package com.raytheon.ooi.driver_control;
 
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVRecord;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
+import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.StringJoiner;
 
@@ -18,6 +23,7 @@ public class DriverConfig {
     private JSONObject portAgentConfig;
     private JSONObject startupConfig;
     private String scenario;
+    private Map<String, String> coefficients;
 
     private final String host = "localhost";
     private final String temp = "/tmp/driver_control";
@@ -37,6 +43,7 @@ public class DriverConfig {
         startupConfig = config.getJSONObject("startup_config");
         JSONObject driverConfig = config.getJSONObject("driver_config");
         scenario = driverConfig.getString("scenario");
+        coefficients = new HashMap<>();
     }
 
     public String getPortAgentConfig() {
@@ -80,5 +87,26 @@ public class DriverConfig {
 
     public String getTemp() {
         return temp;
+    }
+
+    public Map<String, String> getCoefficients() {
+        return coefficients;
+    }
+
+    public void setCoefficients(Map<String, String> coefficients) {
+        this.coefficients = coefficients;
+    }
+
+    public void setCoefficients(File file) throws IOException {
+        Reader in = new FileReader(file);
+        Iterable<CSVRecord> records = CSVFormat.EXCEL.parse(in);
+        for (CSVRecord record: records) {
+            log.debug(record);
+            try {
+                String name = record.get(1);
+                String value = record.get(2);
+                coefficients.put(name, value);
+            } catch (ArrayIndexOutOfBoundsException ignore) { }
+        }
     }
 }
