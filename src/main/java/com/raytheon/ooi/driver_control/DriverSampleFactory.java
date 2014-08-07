@@ -29,41 +29,6 @@ public class DriverSampleFactory {
     public static final String VALUE_ID = "value_id";
     private static Logger log = LogManager.getLogger("DriverSampleFactory");
 
-
-    // temp storage for coefficients
-//    private static Map<String, String> coefficients = new HashMap<>();
-//
-//    static {
-//        coefficients.put("CC_tc_slope", "0.0000422");
-//        coefficients.put("CC_ts_slope", "0.003");
-//        coefficients.put("CC_offset", "2008");
-//        coefficients.put("CC_gain", "4.00");
-//
-//        coefficients.put("CC_arr_tac", "[0.0, 0.0, -2.80979E-09, 2.21477E-06, -5.53586E-04, 5.723E-02]");
-//        coefficients.put("CC_arr_agcl", "[0.0, -8.61134E-10, 9.21187E-07, -3.7455E-04, 6.6550E-02, -4.30086]");
-//        coefficients.put("CC_e2l_ysz", "[0.0, 0.0, 0.0, 0.0, 1.0, -0.00375]");
-//        coefficients.put("CC_arr_hgo", "[0.0, 0.0, 4.38978E-10, -1.88519E-07, -1.88232E-04, 9.23720E-01]");
-//        coefficients.put("CC_arr_tbc1", "[0.0, 0.0, -6.59572E-08, 4.52831E-05, -1.204E-02, 1.70059]");
-//        coefficients.put("CC_arr_tbc2", "[0.0, 0.0, 8.49102E-08, -6.20293E-05, 1.485E-02, -1.41503]");
-//        coefficients.put("CC_arr_tbc3", "[-1.86747E-12, 2.32877E-09, -1.18318E-06, 3.04753E-04, -3.956E-02, 2.2047]");
-//        coefficients.put("CC_arr_agclref", "[0.0, 0.0, -2.5E-10, -2.5E-08, -2.5E-06, -9.025E-02]");
-//        coefficients.put("CC_e2l_h2", "[0.0, 0.0, 0.0, 0.0, 1.0, -0.00375]");
-//        coefficients.put("CC_e2l_hs", "[0.0, 0.0, 0.0, 0.0, 1.0, -0.00350]");
-//        coefficients.put("CC_e2l_agcl", "[0.0, 0.0, 0.0, 0.0, 1.0, -0.00225]");
-//        coefficients.put("CC_arr_logkfh2g", "[0.0, 0.0, -1.51904000E-07, 1.16655E-04, -3.435E-02, 6.32102]");
-//        coefficients.put("CC_arr_eh2sg", "[0.0, 0.0, 0.0, 0.0, -4.49477E-05, -1.228E-02]");
-//        coefficients.put("CC_arr_yh2sg", "[2.3113E+01, -1.8780E+02, 5.9793E+02, -9.1512E+02, 6.7717E+02, -1.8638E+02]");
-//        coefficients.put("CC_e2l_b", "[0.0, 0.0, 0.0, 0.0, 1.04938, -275.5]");
-//        coefficients.put("CC_l2s_b", "[0.0, 0.0, 8.7755e-08, 0.0, 0.000234101, 0.001129306]");
-//        coefficients.put("CC_e2l_r", "[0.0, 0.0, 0.0, 0.0, 1.04938, -275.5]");
-//        coefficients.put("CC_l2s_r", "[0.0, 0.0, 8.7755e-08, 0.0, 0.000234101, 0.001129306]");
-//        coefficients.put("CC_e2l_L", "[0.0, 0.0, 0.0, 0.0, 0.9964, -0.46112]");
-//        coefficients.put("CC_l2s_L", "[9.32483e-7, -0.000122268, 0.00702, -0.23532, 17.06172, 0.0]");
-//        coefficients.put("CC_e2l_H", "[0.0, 0.0, 0.0, 0.0, 0.9979, -0.10287]");
-//        coefficients.put("CC_l2s_H", "[9.32483e-7, -0.000122268, 0.00702, -0.23532, 17.06172, 0.0]");
-//        coefficients.put("CC_s2v_r", "[5.83124e-14, -4.09038e-11, -3.44498e-8, 5.14528e-5, 0.05841, 0.00209]");
-//    }
-
     private DriverSampleFactory() {
     }
 
@@ -117,7 +82,8 @@ public class DriverSampleFactory {
                                         args.clear();
                                         break;
                                     }
-                                    String argName = dp.toString();
+                                    String argName = dp.getName();
+                                    log.debug(argName);
                                     if (map.containsKey(argName))
                                         args.put(key, map.get(argName).toString());
                                     else if (map.containsKey("*" + argName))
@@ -198,7 +164,13 @@ public class DriverSampleFactory {
             writer.append(String.format("from %s import %s\n", df.getOwner(), df.getFunction()));
             // build the function inputs
             for (String key : args.keySet()) {
-                writer.append(String.format("%s = %s\n", key, args.get(key)));
+                String value = args.get(key);
+                // check and see if the value is already a list
+                // if not, make it a list and wrap the list in numpy.array
+                // this is a workaround to ion_functions expecting lists of data
+                // rather than one record at a time.
+                if (!value.startsWith("[")) value = "[" + value + "]";
+                writer.append(String.format("%s = numpy.array(%s)\n", key, value));
             }
             writer.append(String.format("print %s(%s)\n", df.getFunction(), joiner.toString()));
             writer.close();

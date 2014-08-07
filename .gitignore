@@ -5,3 +5,4 @@ driver_control.log
 out
 mi-drivers.log*
 *.yaml
+hs_err_pid*

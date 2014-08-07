@@ -101,10 +101,10 @@ public class DriverConfig {
         Reader in = new FileReader(file);
         Iterable<CSVRecord> records = CSVFormat.EXCEL.parse(in);
         for (CSVRecord record: records) {
-            log.debug(record);
             try {
                 String name = record.get(1);
                 String value = record.get(2);
+                log.debug("Found coefficient {} : {}", name, value);
                 coefficients.put(name, value);
             } catch (ArrayIndexOutOfBoundsException ignore) { }
         }
