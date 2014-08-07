@@ -60,7 +60,7 @@ The following driver configuration file sets up testing for the TRHPH instrument
 **Launch Driver Control**
 
 ```
-    java -jar driver_control.jar                this opens the driver_control application
+    java -jar driver_control.jar
 ```
 
 Driver Config allows step by step execution of instrument driver commands. The protocol driver must be executed 
