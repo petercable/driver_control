@@ -4,5 +4,4 @@ driver_control.log
 .DS_Store
 out
 mi-drivers.log*
-*.yaml
 hs_err_pid*
