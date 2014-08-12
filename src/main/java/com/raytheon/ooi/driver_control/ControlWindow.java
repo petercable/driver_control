@@ -1,5 +1,7 @@
 package com.raytheon.ooi.driver_control;
 
+import com.raytheon.ooi.preload.PreloadDatabase;
+import com.raytheon.ooi.preload.SqliteConnectionFactory;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -17,21 +19,20 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import net.lingala.zip4j.exception.ZipException;
 import org.apache.logging.log4j.LogManager;
 import org.controlsfx.control.action.Action;
 import org.controlsfx.dialog.Dialog;
 import org.controlsfx.dialog.Dialogs;
 import org.json.JSONObject;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 
 public class ControlWindow {
     @FXML AnchorPane root;
@@ -42,14 +43,13 @@ public class ControlWindow {
     @FXML private TableColumn<Parameter, String> parameterNameColumn;
     @FXML private TableColumn<Parameter, String> parameterValueColumn;
     @FXML private TableColumn<Parameter, String> parameterNewValueColumn;
-    @FXML public TextArea console;
     @FXML private TextField stateField;
     @FXML private TextField statusField;
+    @FXML private TextField connectionStatusField;
     @FXML private Button sendParamButton;
     @FXML private TabPane tabPane;
-    @FXML private TextArea driverLogArea;
-    @FXML private Button refreshLogButton;
 
+    private TabPane sampleTabPane;
     private DriverModel model = new DriverModel();
     protected DriverControl controller;
     protected EventListener listener;
@@ -67,6 +67,13 @@ public class ControlWindow {
         }
     };
 
+    private ChangeListener<String> connectionChangeListener = new ChangeListener<String>() {
+        @Override
+        public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
+            Platform.runLater(()->connectionStatusField.setText(newValue));
+        }
+    };
+
     private ListChangeListener<String> sampleChangeListener = new ListChangeListener<String>() {
         @Override
         public void onChanged(final Change<? extends String> change) {
@@ -75,9 +82,18 @@ public class ControlWindow {
                     for (String sample : change.getAddedSubList()) {
                         log.debug("added sample type: " + sample);
                         // new sample type detected
-                        // create a new tab
+                        // create nested TabPane if necessary
+                        if (null == sampleTabPane) {
+                            Tab rootSampleDataTab = new Tab("Sample Data");
+                            tabPane.getTabs().add(rootSampleDataTab);
+                            sampleTabPane = new TabPane();
+                            rootSampleDataTab.setContent(sampleTabPane);
+                        }
+
+                        // create a new sample/stream tab
+                        if (sample.equals("raw")) continue;
                         Tab tab = new Tab(sample);
-                        tabPane.getTabs().add(tab);
+                        sampleTabPane.getTabs().add(tab);
 
                         // create a tableview, add it to the tab
                         TableView<Map<String, Object>> tableView = new TableView<>(model.sampleLists.get(sample));
@@ -91,7 +107,7 @@ public class ControlWindow {
                         for (String key: keys) {
                             TableColumn<Map<String, Object>, String> column = new TableColumn<>(key);
                             column.setCellValueFactory(new MapValueFactory(key));
-                            column.setPrefWidth(50.0);
+                            column.setPrefWidth(key.length() * 10);
                             tableView.getColumns().add(column);
                         }
                     }
@@ -124,6 +140,7 @@ public class ControlWindow {
 
         this.model.getParamsSettableProperty().addListener(settableListener);
         this.model.sampleTypes.addListener(sampleChangeListener);
+        this.model.getConnectionProperty().addListener(connectionChangeListener);
     }
 
     private int getPort(String filename) throws Exception {
@@ -197,10 +214,9 @@ public class ControlWindow {
             }
 
             model.setConfig(config);
-            console.appendText(config.toString());
             try {
-                preload = new PreloadDatabase(SqliteConnectionFactory.getConnection(config.getDatabaseFile()));
-            } catch (SQLException | ClassNotFoundException e) {
+                preload = new PreloadDatabase(SqliteConnectionFactory.getConnection(config));
+            } catch (SQLException | ClassNotFoundException | IOException | InterruptedException e) {
                 Dialogs.create()
                         .owner(null)
                         .title("Preload Database")
@@ -209,6 +225,28 @@ public class ControlWindow {
 
             }
             model.setStatus("config file parsed successfully!");
+        }
+    }
+
+    public void loadCoefficients() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Open Coefficient Config");
+        File file = fileChooser.showOpenDialog(root.getScene().getWindow());
+        loadCoefficients(file);
+    }
+
+    public void loadCoefficients(File file) {
+        log.debug("loading coefficients from file: {}", file);
+        if (file != null) {
+            try {
+                model.getConfig().setCoefficients(file);
+            } catch (IOException e) {
+                Dialogs.create()
+                        .owner(null)
+                        .title("Coefficient parse error")
+                        .message("Coefficient parse error, file must be valid csv...")
+                        .showException(e);
+            }
         }
     }
 
@@ -228,36 +266,13 @@ public class ControlWindow {
         return model.getConfig();
     }
 
-    public void launchDriver() throws IOException, InterruptedException, ZipException {
-        driverProcess = DriverLauncher.launchDriver(model.getConfig());
-        watchStream(driverProcess.getErrorStream());
-        watchStream(driverProcess.getInputStream());
-    }
 
-    public void watchStream(InputStream is) {
-        Thread t = new Thread(() -> {
-            BufferedReader r = new BufferedReader(new InputStreamReader(is));
-            while (true) {
-                StringJoiner joiner = new StringJoiner("\n");
-                try {
-                    while (r.ready()) {
-                        joiner.add(r.readLine());
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                if (joiner.length() > 0)
-                    Platform.runLater(() -> driverLogArea.appendText(joiner.toString()));
-
-                try {
-                    TimeUnit.MILLISECONDS.sleep(100);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        });
-        t.setDaemon(true);
-        t.start();
+    public void launchDriver() throws IOException, InterruptedException {
+        if (driverProcess != null) {
+            shutdownDriver();
+            driverProcess.destroy();
+        }
+        driverProcess = DriverLauncher.launchDriver(model.getConfig(), preload);
     }
 
     public void zmqConnect() {
@@ -269,7 +284,7 @@ public class ControlWindow {
             int eventPort = getPort(config.getEventPortFile());
             int commandPort = getPort(config.getCommandPortFile());
             controller = new DriverControl(host, commandPort, model);
-            listener = new EventListener(host, eventPort, model, controller);
+            listener = new EventListener(host, eventPort, model, controller, preload, config);
             listener.start();
             controller.getProtocolState().get();
             controller.getMetadata().get();
@@ -286,7 +301,7 @@ public class ControlWindow {
             if (response == Dialog.Actions.YES) {
                 try {
                     this.launchDriver();
-                } catch (IOException | InterruptedException | ZipException e1) {
+                } catch (IOException | InterruptedException e1) {
                     Dialogs.create()
                             .owner(null)
                             .title("Launch Driver")
@@ -401,36 +416,45 @@ public class ControlWindow {
                 else {
                     Object value = sample.get(paramName);
                     log.debug("Testing {} value: {}", paramName, value);
-                    switch (parameter.getValueEncoding()) {
-                        case "int8":
-                            if (!(value instanceof Integer)) {
-                                log.error("Non integral value found in Integer field");
+                    if (parameter.getParameterType().equals("quantity")) {
+                        switch (parameter.getValueEncoding()) {
+                            case "int32":
+                                if (!(value instanceof Integer)) {
+                                    log.error("Non integral value found in Integer field");
+                                    break;
+                                }
+                                if ((Integer) value > Integer.MAX_VALUE)
+                                    log.error("Oversized (>int32) integral value found in Integer field");
+                            case "int16":
+                                if ((Integer) value > Short.MAX_VALUE)
+                                    log.error("Oversized (>int16) integral value found in Integer field");
+                            case "int8":
+                                if ((Integer) value > Byte.MAX_VALUE)
+                                    log.error("Oversized (>int8) integral value found in Integer field");
                                 break;
-                            }
-                            if ((Integer) value > Byte.MAX_VALUE)
-                                log.error("Oversized integral value found in Integer field");
-                        case "int16":
-                            if ((Integer) value > Short.MAX_VALUE)
-                                log.error("Oversized integral value found in Integer field");
-                        case "int32":
-                            if ((Integer) value > Integer.MAX_VALUE)
-                                log.error("Oversized integral value found in Integer field");
-                            break;
-                        case "float32":
-                            if (!(value instanceof Double)) {
-                                log.error("Non floating point value found in FP field");
-                            }
-                            if ((Float) value > Float.MAX_VALUE)
-                                log.error("Oversized FP value found in FP field");
-                        case "float64":
-                            if ((Double) value > Double.MAX_VALUE)
-                                log.error("Oversized FP value found in FP field");
-                            break;
-                        case "str":
-                            break;
-                        default:
-                            log.error("UNHANDLED VALUE ENCODING {} {}", paramName, parameter.getValueEncoding());
-                            break;
+                            case "float64":
+                                if (!(value instanceof Double)) {
+                                    if (value instanceof Integer) {
+                                        value = ((Integer) value).doubleValue();
+                                    } else {
+                                        log.error("Non floating point value found in FP field");
+                                        break;
+                                    }
+                                }
+                                if ((Double) value > Double.MAX_VALUE)
+                                    log.error("Oversized FP (double) value found in FP field");
+                            case "float32":
+                                if ((Double) value > Float.MAX_VALUE)
+                                    log.error("Oversized FP (float) value found in FP field");
+                                break;
+                            case "str":
+                                break;
+                            default:
+                                log.error("UNHANDLED VALUE ENCODING {} {}", paramName, parameter.getValueEncoding());
+                                break;
+                        }
+                    } else {
+                        log.debug("Non-quantity field [{}] not checked (type={})", paramName, parameter.getParameterType());
                     }
                 }
             }

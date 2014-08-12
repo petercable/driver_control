@@ -1,5 +1,6 @@
 package com.raytheon.ooi.driver_control;
 
+import com.raytheon.ooi.preload.PreloadDatabase;
 import javafx.application.Platform;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -14,15 +15,19 @@ public class EventListener extends Thread {
 
     private ZContext context;
     private ZMQ.Socket event_socket;
-    private static Logger log = LogManager.getLogger();
+    private static Logger log = LogManager.getLogger("EventListener");
     private boolean keepRunning = true;
     private DriverModel model;
     private DriverControl controller;
+    private PreloadDatabase db;
+    private DriverConfig config;
     private static final String VALUE = "value";
 
-    public EventListener(String host, int port, DriverModel model, DriverControl controller) {
+    public EventListener(String host, int port, DriverModel model, DriverControl controller, PreloadDatabase db, DriverConfig config) {
         this.model = model;
         this.controller = controller;
+        this.db = db;
+        this.config = config;
         log.debug("Initialize EventListener");
         context = new ZContext();
         event_socket = context.createSocket(ZMQ.SUB);
@@ -48,7 +53,7 @@ public class EventListener extends Thread {
                 String type = event.getString("type");
 
                 if (MessageTypes.SAMPLE.equals(type)) {
-                    Map<String, Object> sample = DriverSampleFactory.parseSample(event.getString(VALUE));
+                    Map<String, Object> sample = DriverSampleFactory.parseSample(event.getString(VALUE), db, config);
                     log.info("Received SAMPLE event: " + sample);
                     model.publishSample(sample);
                 } else if (MessageTypes.CONFIG_CHANGE.equals(type)) {

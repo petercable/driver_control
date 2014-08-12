@@ -1,5 +1,6 @@
 package com.raytheon.ooi.driver_control;
 
+import javafx.application.Platform;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -12,17 +13,22 @@ import org.json.JSONObject;
 import java.util.*;
 
 public class DriverModel {
+    private DriverConfig config;
+    private static Logger log = LogManager.getLogger("DriverModel");
+
     protected final ObservableList<ProtocolCommand> commandList = FXCollections.observableArrayList();
     protected final ObservableList<Parameter> paramList = FXCollections.observableArrayList();
     protected final ObservableList<String> sampleTypes = FXCollections.observableArrayList();
+
     protected Map<String, ObservableList<Map<String, Object>>> sampleLists = new HashMap<>();
-    private static Logger log = LogManager.getLogger();
-    private Map<String, ProtocolCommand> commands = new HashMap<>();
+    protected Map<String, ProtocolCommand> commands = new HashMap<>();
     protected Map<String, Parameter> parameters = new HashMap<>();
+
     private SimpleStringProperty state = new SimpleStringProperty();
-    private SimpleBooleanProperty paramsSettable = new SimpleBooleanProperty();
-    private DriverConfig config;
     private SimpleStringProperty status = new SimpleStringProperty();
+    private SimpleStringProperty connection = new SimpleStringProperty();
+
+    private SimpleBooleanProperty paramsSettable = new SimpleBooleanProperty();
 
     public DriverModel() {
         log.debug("Created driver model");
@@ -119,9 +125,11 @@ public class DriverModel {
                 String value = getString(params, name);
                 if (name != null) {
                     Parameter param = parameters.get(name);
-                    if (!Objects.equals(param.getValue(), value)) {
-                        log.debug("UPDATED PARAM: " + name + " VALUE: " + value);
-                        param.setValue(value);
+                    if (param != null) {
+                        if (!Objects.equals(param.getValue(), value)) {
+                            log.debug("UPDATED PARAM: " + name + " VALUE: " + value);
+                            param.setValue(value);
+                        }
                     }
                 }
             }
@@ -130,17 +138,18 @@ public class DriverModel {
 
     protected void publishSample(Map<String, Object> sample) {
         String streamName = (String) sample.get(DriverSampleFactory.STREAM_NAME);
-
-        if (!sampleLists.containsKey(streamName)) {
-            sampleLists.put(streamName, FXCollections.observableArrayList(new ArrayList<Map<String, Object>>()));
-            sampleTypes.add(streamName);
-        }
-        try {
-            List<Map<String, Object>> samples = sampleLists.get(streamName);
-            if (samples != null) samples.add(sample);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        Platform.runLater(()->{
+            if (!sampleLists.containsKey(streamName)) {
+                sampleLists.put(streamName, FXCollections.observableArrayList(new ArrayList<Map<String, Object>>()));
+                sampleTypes.add(streamName);
+            }
+            try {
+                List<Map<String, Object>> samples = sampleLists.get(streamName);
+                if (samples != null) samples.add(sample);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
     }
 
     public boolean getParamsSettable() {
@@ -173,5 +182,17 @@ public class DriverModel {
 
     public SimpleStringProperty getStatusProperty() {
         return status;
+    }
+
+    public String getConnection() {
+        return connection.get();
+    }
+
+    public void setConnection(String connection) {
+        this.connection.set(connection);
+    }
+
+    public SimpleStringProperty getConnectionProperty() {
+        return connection;
     }
 }

@@ -1,5 +1,8 @@
-package com.raytheon.ooi.driver_control;
+package com.raytheon.ooi.preload;
 
+import com.raytheon.ooi.driver_control.DataFunction;
+import com.raytheon.ooi.driver_control.DataParameter;
+import com.raytheon.ooi.driver_control.DataStream;
 import org.apache.logging.log4j.LogManager;
 
 import java.sql.Connection;
@@ -45,12 +48,25 @@ public class PreloadDatabase {
         }
     }
 
+    public String getEggUrl(String scenario) {
+        String result = null;
+        try (Statement stmt = connection.createStatement()) {
+            String sql = String.format("SELECT ia_driver_uri FROM instrumentagent WHERE scenario='%s'", scenario);
+            ResultSet rs = stmt.executeQuery(sql);
+            rs.next();
+            result = rs.getString("ia_driver_uri");
+        } catch (SQLException e) {
+            log.debug("exception getting EggUrl for scenario: {}, {}", scenario, e);
+        }
+        return result;
+    }
+
     private List<String> lookupScenario(String scenario) {
         List<String> streams = new LinkedList<>();
         try (Statement stmt = connection.createStatement()) {
             String sql = String.format(
                     "SELECT name FROM parameterdictionary " +
-                    "WHERE scenario='%s';", scenario);
+                    "WHERE scenario like '%%%s%%';", scenario);
             ResultSet rs = stmt.executeQuery(sql);
             while (rs.next()) {
                 String name = rs.getString("name");
@@ -91,27 +107,64 @@ public class PreloadDatabase {
                 log.debug("rawParams: {}", rawParams);
                 String[] params = rawParams.split(",");
                 for (String id: params) {
-                    log.debug("Getting parameter_id: {}", id);
-                    String sql2 = String.format(
-                            "SELECT name, parameter_type, value_encoding, " +
-                            "parameter_function_id, parameter_function_map " +
-                            "FROM parameterdefs " +
-                            "WHERE id='%s';", id);
-
-                    ResultSet rs2 = stmt2.executeQuery(sql2);
-                    DataParameter dp = new DataParameter(
-                            rs2.getString("name"),
-                            rs2.getString("parameter_type"),
-                            rs2.getString("value_encoding"),
-                            rs2.getString("parameter_function_id"),
-                            rs2.getString("parameter_function_map"));
-                    log.debug("Created DataParameter: {}", dp);
+                    DataParameter dp = getParameterById(id);
                     ds.getParams().put(dp.getName(), dp);
                 }
             }
         } catch (SQLException e) {
-            log.debug("exception: " + e);
+            log.debug("exception: {}", e);
         }
         return ds;
+    }
+
+    public DataParameter getParameterById(String id) {
+        try (Statement stmt = connection.createStatement()) {
+            log.debug("Getting parameter_id: {}", id);
+            String sql = String.format(
+                    "SELECT name, parameter_type, value_encoding, " +
+                            "parameter_function_id, parameter_function_map " +
+                            "FROM parameterdefs " +
+                            "WHERE id='%s';", id);
+
+            ResultSet rs = stmt.executeQuery(sql);
+            if (rs.next()) {
+                DataParameter dp = new DataParameter(
+                        id,
+                        rs.getString("name"),
+                        rs.getString("parameter_type"),
+                        rs.getString("value_encoding"),
+                        rs.getString("parameter_function_id"),
+                        rs.getString("parameter_function_map"));
+                log.trace("Created DataParameter: {}", dp);
+                return dp;
+            }
+            return null;
+        } catch (SQLException e) {
+            log.debug("Exception: {}", e);
+            return null;
+        }
+    }
+
+    public DataFunction getParameterFunctionById(String id) {
+        try (Statement stmt = connection.createStatement()) {
+            log.trace("Getting parameter function: {}", id);
+            String sql = String.format(
+                    "SELECT name, function, owner, args " +
+                    "FROM parameterfunctions " +
+                    "WHERE id='%s';", id);
+
+            ResultSet rs = stmt.executeQuery(sql);
+            DataFunction df = new DataFunction(
+                    id,
+                    rs.getString("name"),
+                    rs.getString("function"),
+                    rs.getString("owner"),
+                    rs.getString("args"));
+            log.trace("Created DataFunction: {}", df);
+            return df;
+        } catch (SQLException e) {
+            log.debug("Exception: {}", e);
+            return null;
+        }
     }
 }
