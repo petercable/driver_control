@@ -99,7 +99,7 @@ public class DriverSampleFactory {
                                 }
                             }
                             if (args.size() > 0) {
-                                Number calculatedValue = applyFunction(db.getParameterFunctionById(p.getParameterFunctionId()), args);
+                                Object calculatedValue = applyFunction(db.getParameterFunctionById(p.getParameterFunctionId()), args);
                                 if (counter == 0)
                                     map.put("*" + p.getName(), calculatedValue);
                                 else
@@ -146,7 +146,7 @@ public class DriverSampleFactory {
         }
     }
 
-    public static Number applyFunction(DataFunction df, Map<String, String> args) {
+    public static Object applyFunction(DataFunction df, Map<String, String> args) {
         StringJoiner joiner = new StringJoiner(", ");
         JSONArray functionArgs = new JSONArray(df.getArgs());
         for (int i = 0; i < functionArgs.length(); i++) {
@@ -161,7 +161,8 @@ public class DriverSampleFactory {
             // import numpy
             writer.append("import numpy\n");
             // import the correct function
-            writer.append(String.format("from %s import %s\n", df.getOwner(), df.getFunction()));
+            if (df.getOwner() != null)
+                writer.append(String.format("from %s import %s\n", df.getOwner(), df.getFunction()));
             // build the function inputs
             for (String key : args.keySet()) {
                 String value = args.get(key);
@@ -172,7 +173,10 @@ public class DriverSampleFactory {
                 if (!value.startsWith("[")) value = "[" + value + "]";
                 writer.append(String.format("%s = numpy.array(%s)\n", key, value));
             }
-            writer.append(String.format("print %s(%s)\n", df.getFunction(), joiner.toString()));
+            if (df.getOwner() != null)
+                writer.append(String.format("print %s(%s)\n", df.getFunction(), joiner.toString()));
+            else
+                writer.append(String.format("print %s\n", df.getFunction()));
             writer.close();
             log.debug("ION_FUNCTION: {}", ion_function);
             String[] command = {"python", ion_function.toString()};
@@ -194,14 +198,13 @@ public class DriverSampleFactory {
                 return 0;
             }
             JSONArray rvalue = new JSONArray(line);
-            return (Number) rvalue.get(0);
+            return rvalue.get(0);
 
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
 
 
-        return 0; //Double.parseDouble(line);
+        return 0;
     }
-
 }
