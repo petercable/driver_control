@@ -26,6 +26,7 @@
                                 <MenuItem onAction="#discover" text="Discover" />
                                 <MenuItem onAction="#shutdownDriver" text="Shutdown" />
                                 <SeparatorMenuItem />
+                                <MenuItem onAction="#getMetadata" text="Get Metadata" />
                                 <MenuItem onAction="#getCapabilities" text="Get Capabilities" />
                                 <MenuItem onAction="#getState" text="Get State" />
                                 <MenuItem onAction="#getParams" text="Get Parameters" />
@@ -34,7 +35,7 @@
                         <Menu text="Test">
                             <items>
                                 <MenuItem onAction="#launchDriver" text="Launch Driver" />
-                                <MenuItem onAction="#zmqConnect" text="Connect to Driver" />
+                                <MenuItem onAction="#driverConnect" text="Connect to Driver" />
                                 <SeparatorMenuItem />
                                 <MenuItem onAction="#validateStreams" text="Validate Streams" />
                             </items>

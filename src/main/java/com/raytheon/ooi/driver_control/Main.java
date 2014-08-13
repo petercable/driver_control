@@ -41,12 +41,12 @@ public class Main extends Application {
     }
 
     public void stop() {
-        if (controlWindow.listener != null)
-            controlWindow.listener.shutdown();
         if (controlWindow.driverProcess != null) {
             controlWindow.shutdownDriver();
             controlWindow.driverProcess.destroy();
         }
+        if (controlWindow.driverInterface != null)
+            controlWindow.driverInterface.shutdown();
         System.exit(0);
     }
 

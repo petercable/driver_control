@@ -1,5 +1,7 @@
 package com.raytheon.ooi.driver_control;
 
+import com.raytheon.ooi.driver_interface.DriverInterface;
+import com.raytheon.ooi.driver_interface.ZmqDriverInterface;
 import com.raytheon.ooi.preload.PreloadDatabase;
 import com.raytheon.ooi.preload.SqliteConnectionFactory;
 import javafx.application.Platform;
@@ -32,7 +34,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
 
 public class ControlWindow {
     @FXML AnchorPane root;
@@ -51,8 +52,7 @@ public class ControlWindow {
 
     private TabPane sampleTabPane;
     private DriverModel model = new DriverModel();
-    protected DriverControl controller;
-    protected EventListener listener;
+    protected DriverInterface driverInterface;
     private PreloadDatabase preload;
     private static org.apache.logging.log4j.Logger log = LogManager.getLogger();
     protected Process driverProcess = null;
@@ -156,7 +156,7 @@ public class ControlWindow {
             if (row != -1) {
                 ProtocolCommand command = model.commandList.get(row);
                 log.debug("Clicked: " + command);
-                controller.execute(command.getName());
+                driverInterface.execute(command.getName());
             }
     }
 
@@ -187,7 +187,7 @@ public class ControlWindow {
         for (Parameter p: model.parameters.values()) {
             p.setNewValue("");
         }
-        controller.setResource(new JSONObject(values).toString());
+        driverInterface.setResource(new JSONObject(values).toString());
     }
 
     public void loadConfig() {
@@ -275,7 +275,7 @@ public class ControlWindow {
         driverProcess = DriverLauncher.launchDriver(model.getConfig(), preload);
     }
 
-    public void zmqConnect() {
+    public void driverConnect() {
         // create model and controllers
         DriverConfig config = this.getConfig();
         model.setStatus("Connecting to driver...");
@@ -283,12 +283,9 @@ public class ControlWindow {
             String host = config.getHost();
             int eventPort = getPort(config.getEventPortFile());
             int commandPort = getPort(config.getCommandPortFile());
-            controller = new DriverControl(host, commandPort, model);
-            listener = new EventListener(host, eventPort, model, controller, preload, config);
-            listener.start();
-            controller.getProtocolState().get();
-            controller.getMetadata().get();
+            driverInterface = new ZmqDriverInterface(host, commandPort, eventPort);
             model.setStatus("Connecting to driver...complete");
+
         } catch (Exception e) {
             e.printStackTrace();
             Action response = Dialogs.create()
@@ -314,7 +311,7 @@ public class ControlWindow {
     }
 
     private boolean checkController() {
-        if (controller == null) {
+        if (driverInterface == null) {
             Action response = Dialogs.create()
                     .owner(null)
                     .title("")
@@ -322,82 +319,80 @@ public class ControlWindow {
                     .actions(Dialog.Actions.YES, Dialog.Actions.NO)
                     .showConfirm();
             if (response == Dialog.Actions.YES) {
-                this.zmqConnect();
+                this.driverConnect();
             }
         }
-        return (controller != null);
+        return (driverInterface != null);
     }
 
     public void configure() {
-        if (! checkController()) return;
-        try {
-            controller.getProtocolState().get();
-            String state = model.getState();
-            if (Objects.equals(state, "DRIVER_STATE_UNCONFIGURED")) {
-                model.setStatus("Configuring driver...");
-                controller.configure().get();
-                controller.init().get();
-                model.setStatus("Configuration complete.");
-            }
-            else {
-                model.setStatus("Configuration already complete.");
-            }
-        } catch (InterruptedException | ExecutionException e) {
-            e.printStackTrace();
+    if (! checkController()) return;
+
+        String state = driverInterface.getProtocolState();
+        String status;
+        log.debug("State: {}", state);
+        if (Objects.equals(state, "DRIVER_STATE_UNCONFIGURED")) {
+            model.setStatus("Configuring driver...");
+            driverInterface.configurePortAgent(model.getConfig().getPortAgentConfig());
+            driverInterface.initParams(model.getConfig().getStartupConfig());
+            status = "Configuration complete.";
         }
+        else {
+            status = "Configuration already complete.";
+        }
+        model.setStatus(status);
+        log.debug(status);
     }
 
     public void connect() {
         if (! checkController()) return;
-        try {
-            controller.getProtocolState().get();
-            String state = model.getState();
-            if (Objects.equals(state, "DRIVER_STATE_DISCONNECTED")) {
-                model.setStatus("Connecting to instrument...");
-                controller.connect().get();
-                model.setStatus("Connecting to instrument...done");
-            }
-        } catch (InterruptedException | ExecutionException e) {
-            e.printStackTrace();
+        driverInterface.getProtocolState();
+        String state = model.getState();
+        if (Objects.equals(state, "DRIVER_STATE_DISCONNECTED")) {
+            model.setStatus("Connecting to instrument...");
+            driverInterface.connect();
+            model.setStatus("Connecting to instrument...done");
         }
     }
 
     public void getCapabilities() {
         if (! checkController()) return;
         model.setStatus("Getting capabilities...");
-        controller.getCapabilities();  // immediate action
+        driverInterface.getCapabilities();  // immediate action
     }
 
     public void getState() {
         if (! checkController()) return;
         model.setStatus("Getting protocol state...");
-        controller.getProtocolState();  // immediate action
+        driverInterface.getProtocolState();  // immediate action
     }
 
     public void getParams() {
         if (! checkController()) return;
         model.setStatus("Getting parameters...");
-        controller.getResource("DRIVER_PARAMETER_ALL");
+        driverInterface.getResource("DRIVER_PARAMETER_ALL");
+    }
+
+    public void getMetadata() {
+        if (! checkController()) return;
+        model.setStatus("Getting metadata...");
+        driverInterface.getMetadata();
     }
 
     public void discover() {
-        if (! checkController()) return;
-        try {
-            controller.getProtocolState().get();
-            String state = model.getState();
-            if (Objects.equals(state, "DRIVER_STATE_UNKNOWN")) {
-                model.setStatus("Discovering protocol state...");
-                controller.discover();
-                model.setStatus("Discovering protocol state...done");
-            }
-        } catch (InterruptedException | ExecutionException e) {
-            e.printStackTrace();
+        driverInterface.getProtocolState();
+        String state = model.getState();
+        if (Objects.equals(state, "DRIVER_STATE_UNKNOWN")) {
+            model.setStatus("Discovering protocol state...");
+            driverInterface.discover();
+            model.setStatus("Discovering protocol state...done");
         }
     }
 
     public void shutdownDriver() {
         if (! checkController()) return;
-        controller.stop();
+        driverInterface.stop();
+        driverInterface.shutdown();
     }
 
     public void validateStreams() {
