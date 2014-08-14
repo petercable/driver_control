@@ -53,9 +53,9 @@ public class ControlWindow {
 
     private TabPane sampleTabPane;
     private DriverModel model = new DriverModel();
-    private DriverEventHandler eventHandler = new DriverEventHandler(model);
     protected DriverInterface driverInterface;
     private PreloadDatabase preload;
+    private DriverEventHandler eventHandler = new DriverEventHandler(model);
     private static Logger log = LogManager.getLogger();
     protected Process driverProcess = null;
 
@@ -76,6 +76,7 @@ public class ControlWindow {
         }
     };
 
+    @SuppressWarnings("unchecked")
     private ListChangeListener<String> sampleChangeListener = new ListChangeListener<String>() {
         @Override
         public void onChanged(final Change<? extends String> change) {
@@ -156,7 +157,11 @@ public class ControlWindow {
             if (row != -1) {
                 ProtocolCommand command = model.commandList.get(row);
                 log.debug("Clicked: {}, {}", command, command.getName());
-                driverInterface.execute(command.getName());
+                model.commandList.clear();
+                new Thread(()-> {
+                    driverInterface.execute(command.getName());
+                    getCapabilities();
+                }).start();
             }
     }
 
@@ -216,6 +221,8 @@ public class ControlWindow {
             model.setConfig(config);
             try {
                 preload = new PreloadDatabase(SqliteConnectionFactory.getConnection(config));
+                eventHandler.setConfig(config);
+                eventHandler.setDb(preload);
             } catch (SQLException | ClassNotFoundException | IOException | InterruptedException e) {
                 Dialogs.create()
                         .owner(null)
@@ -309,6 +316,7 @@ public class ControlWindow {
             }
             model.setStatus("Connecting to driver...failed");
         }
+        updateProtocolState();
     }
 
     private boolean checkController() {
@@ -323,7 +331,7 @@ public class ControlWindow {
                 this.driverConnect();
             }
         }
-        return (driverInterface != null);
+        return (driverInterface != null && driverInterface.isConnected());
     }
 
     private void updateProtocolState() {

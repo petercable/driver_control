@@ -4,6 +4,7 @@ import com.raytheon.ooi.driver_control.DriverCommandEnum;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 
 import java.util.Arrays;
@@ -15,6 +16,7 @@ import java.util.Observable;
 
 public abstract class DriverInterface extends Observable {
     private static Logger log = LogManager.getLogger(DriverInterface.class);
+    protected boolean connected = false;
 
     public String ping() {
         return (String) sendCommand(DriverCommandEnum.PING, 5, "ping from java");
@@ -28,20 +30,23 @@ public abstract class DriverInterface extends Observable {
         sendCommand(DriverCommandEnum.SET_INIT_PARAMS, 5, startupConfig);
     }
 
-    public Object connect() {
-        return sendCommand(DriverCommandEnum.CONNECT, 15);
+    public void connect() {
+        sendCommand(DriverCommandEnum.CONNECT, 15);
     }
 
-    public Object discoverState() {
-        return sendCommand(DriverCommandEnum.DISCOVER_STATE);
+    public void discoverState() {
+        sendCommand(DriverCommandEnum.DISCOVER_STATE);
     }
 
-    public Object stopDriver() {
-        return sendCommand(DriverCommandEnum.STOP_DRIVER, 5);
+    public void stopDriver() {
+        sendCommand(DriverCommandEnum.STOP_DRIVER, 5);
     }
 
-    public Object getMetadata() {
-        return sendCommand(DriverCommandEnum.GET_CONFIG_METADATA, 5);
+    public JSONObject getMetadata() {
+        Object reply = sendCommand(DriverCommandEnum.GET_CONFIG_METADATA, 5);
+        if (reply instanceof JSONObject)
+            return (JSONObject) reply;
+        return null;
     }
 
     public JSONArray getCapabilities() {
@@ -68,6 +73,10 @@ public abstract class DriverInterface extends Observable {
         return sendCommand(DriverCommandEnum.SET_RESOURCE, parameters);
     }
 
+    public boolean isConnected() {
+        return connected;
+    }
+
     private Object sendCommand(DriverCommandEnum c, int timeout, String... args) {
         String command = buildCommand(c, args).toString();
         log.debug("Sending command: {}", command);
@@ -82,6 +91,7 @@ public abstract class DriverInterface extends Observable {
         return sendCommand(c, 600, args);
     }
 
+    @SuppressWarnings("unchecked")
     private org.json.simple.JSONObject buildCommand(DriverCommandEnum command, String... args) {
         org.json.simple.JSONObject message = new org.json.simple.JSONObject();
         org.json.simple.JSONObject keyword_args = new org.json.simple.JSONObject();

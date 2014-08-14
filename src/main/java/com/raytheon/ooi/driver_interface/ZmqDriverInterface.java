@@ -4,8 +4,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Concrete implementation of the Instrument Driver interface for ZMQ
@@ -15,7 +13,6 @@ public class ZmqDriverInterface extends DriverInterface {
     private final ZMQ.Socket commandSocket;
     private final ZMQ.Socket eventSocket;
     private boolean keepRunning = true;
-    private List<Object> listeners = new ArrayList<>();
     private static Logger log = LogManager.getLogger(ZmqDriverInterface.class);
 
     public ZmqDriverInterface(String host, int commandPort, int eventPort) {
@@ -36,6 +33,7 @@ public class ZmqDriverInterface extends DriverInterface {
         
         log.debug("Connected, starting event loop");
         new Thread(this::eventLoop).start();
+        connected = true;
     }
 
     protected String _sendCommand(String command, int timeout) {
@@ -48,16 +46,20 @@ public class ZmqDriverInterface extends DriverInterface {
     }
 
     protected void eventLoop() {
-        while (keepRunning) {
-            String reply = eventSocket.recvStr();
+        try {
+            while (keepRunning) {
+                String reply = eventSocket.recvStr();
 
-            if (reply != null) {
-                log.debug("REPLY = {}, numObservers = {}", reply, countObservers());
-                setChanged();
-                notifyObservers(reply);
-            } else {
-                log.debug("Empty message received in event loop");
+                if (reply != null) {
+                    log.debug("REPLY = {}, numObservers = {}", reply, countObservers());
+                    setChanged();
+                    notifyObservers(reply);
+                } else {
+                    log.debug("Empty message received in event loop");
+                }
             }
+        } catch (Exception e) {
+            log.debug("Exception in eventLoop: {}", e.getMessage());
         }
     }
 
@@ -65,5 +67,6 @@ public class ZmqDriverInterface extends DriverInterface {
         keepRunning = false;
         eventSocket.close();
         commandSocket.close();
+        connected = false;
     }
 }

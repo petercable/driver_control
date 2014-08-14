@@ -3,8 +3,9 @@ package com.raytheon.ooi.driver_control;
 import com.raytheon.ooi.preload.PreloadDatabase;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.json.JSONArray;
-import org.json.JSONObject;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.JSONValue;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -35,30 +36,39 @@ public class DriverSampleFactory {
     public static Map<String, Object> parseSample(String s, PreloadDatabase db, DriverConfig config) {
         Map<String, Object> map = new ConcurrentHashMap<>();
         Map<String, String> coefficients = config.getCoefficients();
-        JSONObject json = new JSONObject(s);
-        JSONArray json_values = json.getJSONArray(VALUES);
+        JSONObject json = (JSONObject) JSONValue.parse(s);
 
-        map.put(STREAM_NAME, json.getString(STREAM_NAME));
-        map.put(PREFERRED_TIMESTAMP, json.getString(PREFERRED_TIMESTAMP));
-        map.put(QUALITY_FLAG, json.getString(QUALITY_FLAG));
-        map.put(PORT_TIMESTAMP, json.getDouble(PORT_TIMESTAMP));
-        map.put(DRIVER_TIMESTAMP, json.getDouble(DRIVER_TIMESTAMP));
-        map.put(PKT_FORMAT_ID, json.getString(PKT_FORMAT_ID));
-        map.put(PKT_VERSION, json.getInt(PKT_VERSION));
+        log.debug(json);
+
+        JSONArray json_values = (JSONArray) json.get(VALUES);
+
+        map.put(STREAM_NAME, json.get(STREAM_NAME));
+        map.put(PREFERRED_TIMESTAMP, json.get(PREFERRED_TIMESTAMP));
+        map.put(QUALITY_FLAG, json.get(QUALITY_FLAG));
+        map.put(PORT_TIMESTAMP, json.get(PORT_TIMESTAMP));
+        map.put(DRIVER_TIMESTAMP, json.get(DRIVER_TIMESTAMP));
+        map.put(PKT_FORMAT_ID, json.get(PKT_FORMAT_ID));
+        map.put(PKT_VERSION, json.get(PKT_VERSION));
 
         log.trace("Loading instrument supplied values into sample object...");
-        for (int i = 0; i < json_values.length(); i++) {
-            JSONObject element = (JSONObject) json_values.get(i);
-            map.put(element.getString(VALUE_ID), element.get(VALUE));
+        for (Object json_value : json_values) {
+            log.debug(json_value);
+            JSONObject element = (JSONObject) json_value;
+            Object value = element.get(VALUE);
+            if (value == null) value = "";
+            map.put((String) element.get(VALUE_ID), value);
         }
 
-        DataStream stream = db.getStream(json.getString(STREAM_NAME));
+        log.debug(json);
+        log.debug(db);
+
+        DataStream stream = db.getStream((String) json.get(STREAM_NAME));
         Map<String, DataParameter> params = stream.getParams();
 
         // make two passes, L1 data needs to be available before L2 can be calculated
         for (int i = 0; i < 2; i++) {
             final int counter = i;
-            params.values()
+            (params.values())
                     .parallelStream()
                     .filter((p) -> p.getParameterType().equals("function"))
                     .filter((p) -> p.getParameterFunctionId() != null)
@@ -67,12 +77,13 @@ public class DriverSampleFactory {
                     .forEach((p) -> {
                         log.debug("ID: {} Parameter Function Map: {}", p.getId(), p.getParameterFunctionMap());
                         try {
-                            JSONObject functionMap = new JSONObject(p.getParameterFunctionMap());
+                            JSONObject functionMap = (JSONObject) JSONValue.parseWithException(p.getParameterFunctionMap().replace("'", "\""));
+                            log.debug("FunctionMap: {}", functionMap);
                             Map<String, String> args = new HashMap<>();
 
                             for (Object o : functionMap.keySet()) {
                                 String key = (String) o;
-                                String name = functionMap.getString(key);
+                                String name = (String) functionMap.get(key);
                                 if (coefficients.containsKey(name)) {
                                     args.put(key, coefficients.get(name));
                                 } else {
@@ -148,9 +159,9 @@ public class DriverSampleFactory {
 
     public static Object applyFunction(DataFunction df, Map<String, String> args) {
         StringJoiner joiner = new StringJoiner(", ");
-        JSONArray functionArgs = new JSONArray(df.getArgs());
-        for (int i = 0; i < functionArgs.length(); i++) {
-            String argName = functionArgs.getString(i);
+        JSONArray functionArgs = (JSONArray) JSONValue.parse(df.getArgs().replace("'", "\""));
+        for (int i = 0; i < functionArgs.size(); i++) {
+            String argName = (String) functionArgs.get(i);
             log.debug("index: {} argName: {} value: {}", i, argName, args.get(argName));
             joiner.add(argName);
         }
@@ -197,7 +208,10 @@ public class DriverSampleFactory {
                 log.debug("No response from ion_functions...");
                 return 0;
             }
-            JSONArray rvalue = new JSONArray(line);
+            log.debug(line);
+            JSONArray rvalue = (JSONArray) JSONValue.parse(line);
+            if (rvalue == null)
+                return 0;
             return rvalue.get(0);
 
         } catch (IOException | InterruptedException e) {
