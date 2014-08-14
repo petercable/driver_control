@@ -8,7 +8,6 @@ import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.ListChangeListener;
-import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -22,10 +21,12 @@ import javafx.scene.layout.AnchorPane;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.controlsfx.control.action.Action;
 import org.controlsfx.dialog.Dialog;
 import org.controlsfx.dialog.Dialogs;
-import org.json.JSONObject;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 
 import java.io.File;
 import java.io.IOException;
@@ -52,9 +53,10 @@ public class ControlWindow {
 
     private TabPane sampleTabPane;
     private DriverModel model = new DriverModel();
+    private DriverEventHandler eventHandler = new DriverEventHandler(model);
     protected DriverInterface driverInterface;
     private PreloadDatabase preload;
-    private static org.apache.logging.log4j.Logger log = LogManager.getLogger();
+    private static Logger log = LogManager.getLogger();
     protected Process driverProcess = null;
 
     private ChangeListener<Boolean> settableListener = new ChangeListener<Boolean>() {
@@ -118,8 +120,6 @@ public class ControlWindow {
 
     @FXML
     private void initialize() {
-
-
         commandColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
         commandNameColumn.setCellValueFactory(new PropertyValueFactory<>("displayName"));
 
@@ -155,7 +155,7 @@ public class ControlWindow {
             int row = source.getSelectionModel().getSelectedIndex();
             if (row != -1) {
                 ProtocolCommand command = model.commandList.get(row);
-                log.debug("Clicked: " + command);
+                log.debug("Clicked: {}, {}", command, command.getName());
                 driverInterface.execute(command.getName());
             }
     }
@@ -284,6 +284,7 @@ public class ControlWindow {
             int eventPort = getPort(config.getEventPortFile());
             int commandPort = getPort(config.getCommandPortFile());
             driverInterface = new ZmqDriverInterface(host, commandPort, eventPort);
+            driverInterface.addObserver(eventHandler);
             model.setStatus("Connecting to driver...complete");
 
         } catch (Exception e) {
@@ -325,17 +326,21 @@ public class ControlWindow {
         return (driverInterface != null);
     }
 
+    private void updateProtocolState() {
+        model.setState(driverInterface.getProtocolState());
+        log.debug("Protocol state in model set to: {}", model.getStatus());
+    }
+
     public void configure() {
     if (! checkController()) return;
-
-        String state = driverInterface.getProtocolState();
+        updateProtocolState();
         String status;
-        log.debug("State: {}", state);
-        if (Objects.equals(state, "DRIVER_STATE_UNCONFIGURED")) {
+        if (Objects.equals(model.getState(), "DRIVER_STATE_UNCONFIGURED")) {
             model.setStatus("Configuring driver...");
             driverInterface.configurePortAgent(model.getConfig().getPortAgentConfig());
             driverInterface.initParams(model.getConfig().getStartupConfig());
             status = "Configuration complete.";
+            updateProtocolState();
         }
         else {
             status = "Configuration already complete.";
@@ -346,25 +351,26 @@ public class ControlWindow {
 
     public void connect() {
         if (! checkController()) return;
-        driverInterface.getProtocolState();
-        String state = model.getState();
-        if (Objects.equals(state, "DRIVER_STATE_DISCONNECTED")) {
+        updateProtocolState();
+        if (Objects.equals(model.getState(), "DRIVER_STATE_DISCONNECTED")) {
             model.setStatus("Connecting to instrument...");
             driverInterface.connect();
             model.setStatus("Connecting to instrument...done");
+            updateProtocolState();
         }
     }
 
     public void getCapabilities() {
         if (! checkController()) return;
         model.setStatus("Getting capabilities...");
-        driverInterface.getCapabilities();  // immediate action
+        JSONArray capabilities = driverInterface.getCapabilities();
+        model.parseCapabilities((JSONArray)capabilities.get(0));
     }
 
     public void getState() {
         if (! checkController()) return;
         model.setStatus("Getting protocol state...");
-        driverInterface.getProtocolState();  // immediate action
+        updateProtocolState();
     }
 
     public void getParams() {
@@ -380,80 +386,19 @@ public class ControlWindow {
     }
 
     public void discover() {
-        driverInterface.getProtocolState();
-        String state = model.getState();
-        if (Objects.equals(state, "DRIVER_STATE_UNKNOWN")) {
+        updateProtocolState();
+        if (Objects.equals(model.getState(), "DRIVER_STATE_UNKNOWN")) {
             model.setStatus("Discovering protocol state...");
-            driverInterface.discover();
+            driverInterface.discoverState();
             model.setStatus("Discovering protocol state...done");
+            updateProtocolState();
         }
     }
 
     public void shutdownDriver() {
         if (! checkController()) return;
-        driverInterface.stop();
+        driverInterface.stopDriver();
         driverInterface.shutdown();
-    }
-
-    public void validateStreams() {
-
-        Map<String, DataStream> map = preload.getStreams(model.getConfig().getScenario());
-        map.entrySet().forEach(System.out::println);
-        map.keySet().stream().filter(model.sampleLists::containsKey).forEach(key -> {
-            ObservableList<Map<String, Object>> samples = model.sampleLists.get(key);
-            Map sample = samples.get(0);
-            DataStream ds = map.get(key);
-            log.debug("going to compare {} to {}", sample, ds);
-            for (String paramName : ds.getParams().keySet()) {
-                DataParameter parameter = ds.getParams().get(paramName);
-                if (!sample.containsKey(paramName))
-                    log.error("MISSING PARAMETER FROM STREAM: {}", paramName);
-                else {
-                    Object value = sample.get(paramName);
-                    log.debug("Testing {} value: {}", paramName, value);
-                    if (parameter.getParameterType().equals("quantity")) {
-                        switch (parameter.getValueEncoding()) {
-                            case "int32":
-                                if (!(value instanceof Integer)) {
-                                    log.error("Non integral value found in Integer field");
-                                    break;
-                                }
-                                if ((Integer) value > Integer.MAX_VALUE)
-                                    log.error("Oversized (>int32) integral value found in Integer field");
-                            case "int16":
-                                if ((Integer) value > Short.MAX_VALUE)
-                                    log.error("Oversized (>int16) integral value found in Integer field");
-                            case "int8":
-                                if ((Integer) value > Byte.MAX_VALUE)
-                                    log.error("Oversized (>int8) integral value found in Integer field");
-                                break;
-                            case "float64":
-                                if (!(value instanceof Double)) {
-                                    if (value instanceof Integer) {
-                                        value = ((Integer) value).doubleValue();
-                                    } else {
-                                        log.error("Non floating point value found in FP field");
-                                        break;
-                                    }
-                                }
-                                if ((Double) value > Double.MAX_VALUE)
-                                    log.error("Oversized FP (double) value found in FP field");
-                            case "float32":
-                                if ((Double) value > Float.MAX_VALUE)
-                                    log.error("Oversized FP (float) value found in FP field");
-                                break;
-                            case "str":
-                                break;
-                            default:
-                                log.error("UNHANDLED VALUE ENCODING {} {}", paramName, parameter.getValueEncoding());
-                                break;
-                        }
-                    } else {
-                        log.debug("Non-quantity field [{}] not checked (type={})", paramName, parameter.getParameterType());
-                    }
-                }
-            }
-        });
     }
 
     public void displayTestProcedures() {

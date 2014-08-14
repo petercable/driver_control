@@ -1,6 +1,14 @@
-package com.raytheon.ooi.driver_control;
-
-public class DriverControl {
+//package com.raytheon.ooi.driver_control;
+//
+//import com.raytheon.ooi.driver_interface.DriverInterface;
+//import org.apache.logging.log4j.LogManager;
+//import org.apache.logging.log4j.Logger;
+//
+//import java.util.concurrent.ExecutorService;
+//import java.util.concurrent.ScheduledExecutorService;
+//
+//
+//public class DriverControl {
 //    private static Logger log = LogManager.getLogger("DriverControl");
 //    private DriverModel model;
 //    private volatile boolean isCommanding = false;
@@ -49,11 +57,11 @@ public class DriverControl {
 //        sendCommand(DriverCommandEnum.CONNECT, 15);
 //    }
 //
-//    protected String discover() {
+//    protected String discoverState() {
 //        sendCommand(DriverCommandEnum.DISCOVER_STATE);
 //    }
 //
-//    protected String stop() {
+//    protected String stopDriver() {
 //        sendCommand(DriverCommandEnum.STOP_DRIVER, 5);
 //    }
 //
@@ -200,4 +208,4 @@ public class DriverControl {
 //        log.debug("BUILT COMMAND: {}", message);
 //        return message;
 //    }
-}
+//}

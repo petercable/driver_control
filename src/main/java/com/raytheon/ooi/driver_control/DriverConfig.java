@@ -4,7 +4,7 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.json.JSONObject;
+import org.json.simple.JSONObject;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.File;
@@ -39,10 +39,10 @@ public class DriverConfig {
         Map map = (Map) yaml.load(Files.newInputStream(path));
         JSONObject config = new JSONObject(map);
 
-        portAgentConfig = config.getJSONObject("port_agent_config");
-        startupConfig = config.getJSONObject("startup_config");
-        JSONObject driverConfig = config.getJSONObject("driver_config");
-        scenario = driverConfig.getString("scenario");
+        portAgentConfig = new JSONObject((Map)config.get("port_agent_config"));
+        startupConfig = new JSONObject((Map)config.get("startup_config"));
+        JSONObject driverConfig = new JSONObject((Map)config.get("driver_config"));
+        scenario = (String) driverConfig.get("scenario");
         coefficients = new HashMap<>();
     }
 
@@ -65,9 +65,9 @@ public class DriverConfig {
     public String toString() {
         StringJoiner joiner = new StringJoiner("\n\n");
         joiner.add("PORT AGENT CONFIG");
-        joiner.add(portAgentConfig.toString(2));
+        joiner.add(portAgentConfig.toString());
         joiner.add("STARTUP CONFIG");
-        joiner.add(startupConfig.toString(2));
+        joiner.add(startupConfig.toString());
         joiner.add("COMMAND PORT FILE: " + commandPortFile);
         joiner.add("EVENT PORT FILE: " + eventPortFile);
         return joiner.toString();

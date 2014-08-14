@@ -7,8 +7,8 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.json.JSONArray;
-import org.json.JSONObject;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 
 import java.util.*;
 
@@ -45,7 +45,7 @@ public class DriverModel {
     }
 
     public String getString(JSONObject object, String key) {
-        if (object.has(key)) {
+        if (object.containsKey(key)) {
             Object val = object.get(key);
             return maybeString(val);
         }
@@ -53,23 +53,23 @@ public class DriverModel {
     }
 
     public void parseMetadata(JSONObject metadata) {
-        JSONObject _commands = metadata.getJSONObject("commands");
-        JSONObject _parameters = metadata.getJSONObject("parameters");
+        JSONObject _commands = (JSONObject) metadata.get("commands");
+        JSONObject _parameters = (JSONObject) metadata.get("parameters");
         for (Object _name: _commands.keySet()) {
             String name = (String) _name;
-            String displayName = getString(_commands.getJSONObject(name), "display_name");
+            String displayName = getString((JSONObject)_commands.get(name), "display_name");
             ProtocolCommand command = new ProtocolCommand(name, displayName);
             commands.put(name, command);
         }
 
         for (Object _name: _parameters.keySet()) {
             String name = (String) _name;
-            JSONObject param = _parameters.getJSONObject(name);
+            JSONObject param = (JSONObject) _parameters.get(name);
             String displayName = getString(param, "display_name");
             String visibility = getString(param, "visibility");
             String description = getString(param, "description");
 
-            JSONObject value = param.getJSONObject("value");
+            JSONObject value = (JSONObject) param.get("value");
             String valueDescription = getString(value, "description");
             String valueType = getString(value, "type");
             String units = getString(value, "units");
@@ -86,11 +86,12 @@ public class DriverModel {
         log.debug("parse capabilities, clearing commandList");
         commandList.clear();
         setParamsSettable(false);
-        for (int i=0; i<capes.length(); i++) {
-            String capability = capes.getString(i);
+        for (Object cape : capes) {
+            log.debug("CAPABILITY: {}", cape);
+            String capability = (String) cape;
             log.debug("Found capability: " + capability);
             ProtocolCommand command = commands.get(capability);
-            if (command==null) {
+            if (command == null) {
                 command = new ProtocolCommand(capability, "");
                 commands.put(capability, command);
             }

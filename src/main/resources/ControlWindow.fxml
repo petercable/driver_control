@@ -37,7 +37,7 @@
                                 <MenuItem onAction="#launchDriver" text="Launch Driver" />
                                 <MenuItem onAction="#driverConnect" text="Connect to Driver" />
                                 <SeparatorMenuItem />
-                                <MenuItem onAction="#validateStreams" text="Validate Streams" />
+                                <!--<MenuItem onAction="#validateStreams" text="Validate Streams" />-->
                             </items>
                         </Menu>
                         <Menu text="Help">

@@ -50,11 +50,14 @@ public class ZmqDriverInterface extends DriverInterface {
     protected void eventLoop() {
         while (keepRunning) {
             String reply = eventSocket.recvStr();
-            if (reply != null)
-                notifyObservers(reply);
-            else
-                log.debug("Empty message received in event loop");
 
+            if (reply != null) {
+                log.debug("REPLY = {}, numObservers = {}", reply, countObservers());
+                setChanged();
+                notifyObservers(reply);
+            } else {
+                log.debug("Empty message received in event loop");
+            }
         }
     }
 
