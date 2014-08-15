@@ -39,4 +39,20 @@ public class Constants {
     public static final String VALUE                    = "value";
     public static final String VALUES                   = "values";
     public static final String VALUE_ID                 = "value_id";
+    public static final String PARAMETER_TYPE_QUANTITY  = "quantity";
+    public static final String PARAMETER_TYPE_FUNCTION  = "function";
+    public static final String PARAMETER_TYPE_ARRAY     = "array<quantity>";
+    public static final String PARAMETER_TYPE_CATEGORY  = "category<int8:str>";
+    public static final String PARAMETER_TYPE_BOOLEAN   = "boolean";
+    public static final String VALUE_TYPE_INT8          = "int8";
+    public static final String VALUE_TYPE_INT16         = "int16";
+    public static final String VALUE_TYPE_INT32         = "int32";
+    public static final String VALUE_TYPE_INT64         = "int64";
+    public static final String VALUE_TYPE_UINT8         = "uint8";
+    public static final String VALUE_TYPE_UINT16        = "uint16";
+    public static final String VALUE_TYPE_UINT32        = "uint32";
+    public static final String VALUE_TYPE_UINT64        = "uint64";
+    public static final String VALUE_TYPE_FLOAT32       = "float32";
+    public static final String VALUE_TYPE_FLOAT64       = "float64";
+    public static final String VALUE_TYPE_STR           = "str";
 }
