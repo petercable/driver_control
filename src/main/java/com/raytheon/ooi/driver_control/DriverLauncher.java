@@ -1,6 +1,7 @@
 package com.raytheon.ooi.driver_control;
 
 import com.raytheon.ooi.preload.PreloadDatabase;
+import com.raytheon.ooi.preload.SqlitePreloadDatabase;
 import org.apache.logging.log4j.LogManager;
 import org.apache.poi.util.IOUtils;
 import org.controlsfx.dialog.Dialogs;
@@ -18,7 +19,8 @@ public class DriverLauncher {
     private DriverLauncher() {
     }
 
-    public static Process launchDriver(DriverConfig config, PreloadDatabase db) throws IOException, InterruptedException {
+    public static Process launchDriver(DriverConfig config) throws IOException, InterruptedException {
+        PreloadDatabase db = SqlitePreloadDatabase.getInstance();
         String scenarioPath = String.join("/", config.getTemp(), config.getScenario());
         String eggUrl = db.getEggUrl(config.getScenario());
         String eggName = eggUrl.substring(eggUrl.lastIndexOf('/') + 1);

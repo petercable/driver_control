@@ -1,6 +1,7 @@
 package com.raytheon.ooi.driver_control;
 
 import com.raytheon.ooi.preload.PreloadDatabase;
+import com.raytheon.ooi.preload.SqlitePreloadDatabase;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.simple.JSONArray;
@@ -28,12 +29,13 @@ public class DriverSampleFactory {
     public static final String VALUE = "value";
     public static final String VALUES = "values";
     public static final String VALUE_ID = "value_id";
+    private static PreloadDatabase db = SqlitePreloadDatabase.getInstance();
     private static Logger log = LogManager.getLogger("DriverSampleFactory");
 
     private DriverSampleFactory() {
     }
 
-    public static Map<String, Object> parseSample(String s, PreloadDatabase db, DriverConfig config) {
+    public static Map<String, Object> parseSample(String s, DriverConfig config) {
         Map<String, Object> map = new ConcurrentHashMap<>();
         Map<String, String> coefficients = config.getCoefficients();
         JSONObject json = (JSONObject) JSONValue.parse(s);

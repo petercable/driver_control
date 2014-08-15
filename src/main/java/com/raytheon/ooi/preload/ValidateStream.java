@@ -9,7 +9,7 @@ import java.util.Map;
 
 public class ValidateStream {
 
-    private PreloadDatabase preload;
+    private final PreloadDatabase preload = SqlitePreloadDatabase.getInstance();
     private static org.apache.logging.log4j.Logger log = LogManager.getLogger();
 
     private final String PARAMETER_TYPE_QUANTITY = "quantity";
@@ -44,7 +44,7 @@ public class ValidateStream {
 
 
 
-    public void validateStreams(PreloadDatabase preload, DriverModel model, String scenario) {
+    public void validateStreams(DriverModel model, String scenario) {
 
         //TODO - NEEDS TO DO ALL SAMPLES!
 

@@ -1,7 +1,6 @@
 package com.raytheon.ooi.preload;
 
 import com.raytheon.ooi.driver_control.DriverConfig;
-import org.apache.logging.log4j.LogManager;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -9,17 +8,27 @@ import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
-public class SqliteConnectionFactory {
-    private static org.apache.logging.log4j.Logger log = LogManager.getLogger();
+/**
+ * Concrete implementation of the PreloadDatabase using SQLite.
+ * This class will clone the parse_preload repo and execute the parse_preload script
+ * to generate a preload database if one does not already exist.
+ */
+public class SqlitePreloadDatabase extends PreloadDatabase {
+
+    private final static SqlitePreloadDatabase INSTANCE = new SqlitePreloadDatabase();
+    private SqlitePreloadDatabase() {}
+
     private static final String git = "git clone https://github.com/petercable/parse_preload.git";
     private static final String parse = "parse_preload.py";
+    
+    public static SqlitePreloadDatabase getInstance() {
+        return INSTANCE;
+    }
 
-    public static Connection getConnection(DriverConfig config) throws
-            SQLException, ClassNotFoundException, IOException, InterruptedException {
+    public void connect(DriverConfig config) throws Exception {
         if (!Files.exists(Paths.get(config.getTemp())))
             Files.createDirectory(Paths.get(config.getTemp()));
         if (!Files.exists(Paths.get(config.getDatabaseFile())))
@@ -28,13 +37,11 @@ public class SqliteConnectionFactory {
         if (!Files.exists(Paths.get(config.getDatabaseFile())))
             throw new SQLException("Database does not exist!");
 
-        Connection c;
         Class.forName("org.sqlite.JDBC");
-        c = DriverManager.getConnection("jdbc:sqlite:" + config.getDatabaseFile());
-        return c;
+        connection = DriverManager.getConnection("jdbc:sqlite:" + config.getDatabaseFile());
     }
 
-    public static void createDB(DriverConfig config) throws IOException, InterruptedException {
+    public void createDB(DriverConfig config) throws IOException, InterruptedException {
         // do we have parse preload already?  If not, git it
         log.debug("Creating SQLite database with python script");
         String[] args = {};

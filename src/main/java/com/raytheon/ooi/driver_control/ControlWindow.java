@@ -3,7 +3,7 @@ package com.raytheon.ooi.driver_control;
 import com.raytheon.ooi.driver_interface.DriverInterface;
 import com.raytheon.ooi.driver_interface.ZmqDriverInterface;
 import com.raytheon.ooi.preload.PreloadDatabase;
-import com.raytheon.ooi.preload.SqliteConnectionFactory;
+import com.raytheon.ooi.preload.SqlitePreloadDatabase;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -30,7 +30,6 @@ import org.json.simple.JSONObject;
 
 import java.io.File;
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.*;
 
 public class ControlWindow {
@@ -51,7 +50,7 @@ public class ControlWindow {
     private TabPane sampleTabPane;
     private DriverModel model = new DriverModel();
     protected DriverInterface driverInterface;
-    private PreloadDatabase preload;
+    private PreloadDatabase preload = SqlitePreloadDatabase.getInstance();
     private DriverEventHandler eventHandler = new DriverEventHandler(model);
     private static Logger log = LogManager.getLogger();
     protected Process driverProcess = null;
@@ -211,10 +210,9 @@ public class ControlWindow {
 
             model.setConfig(config);
             try {
-                preload = new PreloadDatabase(SqliteConnectionFactory.getConnection(config));
+                preload.connect(config);
                 eventHandler.setConfig(config);
-                eventHandler.setDb(preload);
-            } catch (SQLException | ClassNotFoundException | IOException | InterruptedException e) {
+            } catch (Exception e) {
                 Dialogs.create()
                         .owner(null)
                         .title("Preload Database")
@@ -270,7 +268,7 @@ public class ControlWindow {
             shutdownDriver();
             driverProcess.destroy();
         }
-        driverProcess = DriverLauncher.launchDriver(model.getConfig(), preload);
+        driverProcess = DriverLauncher.launchDriver(model.getConfig());
     }
 
     public void driverConnect() {
@@ -364,7 +362,7 @@ public class ControlWindow {
         if (! checkController()) return;
         model.setStatus("Getting capabilities...");
         JSONArray capabilities = driverInterface.getCapabilities();
-        model.parseCapabilities((JSONArray)capabilities.get(0));
+        model.parseCapabilities((JSONArray) capabilities.get(0));
     }
 
     public void getState() {

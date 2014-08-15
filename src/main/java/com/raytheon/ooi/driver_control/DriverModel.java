@@ -31,6 +31,7 @@ public class DriverModel {
     private SimpleBooleanProperty paramsSettable = new SimpleBooleanProperty();
 
     public DriverModel() {
+
         log.debug("Created driver model");
     }
 
