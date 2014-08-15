@@ -18,8 +18,9 @@ public class DriverEventHandler implements Observer {
     private PreloadDatabase db;
     private DriverConfig config;
     private final static Logger log = LogManager.getLogger(DriverEventHandler.class);
-    private final static String STATE_CHANGE_EVENT = "DRIVER_EVENT_STATE_CHANGE";
+    private final static String STATE_CHANGE_EVENT = "DRIVER_ASYNC_EVENT_STATE_CHANGE";
     private final static String SAMPLE_EVENT = "DRIVER_ASYNC_EVENT_SAMPLE";
+    private final static String CONFIG_CHANGE_EVENT = "DRIVER_ASYNC_EVENT_CONFIG_CHANGE";
 
     public DriverEventHandler(DriverModel model) {
         this.model = model;
@@ -32,17 +33,20 @@ public class DriverEventHandler implements Observer {
         if (event instanceof JSONObject) {
             JSONObject jsonEvent = (JSONObject) event;
             String eventType = (String) jsonEvent.get("type");
-            String eventValue = (String) jsonEvent.get("value");
+            Object eventValue = jsonEvent.get("value");
             Double eventTime = (Double) jsonEvent.get("time");
             log.debug("type: {}, value: {}, time: {}", eventType, eventValue, eventTime);
             switch (eventType) {
                 case STATE_CHANGE_EVENT:
-                    Platform.runLater(()->model.setState(eventValue));
+                    Platform.runLater(()->model.setState((String)eventValue));
                     break;
                 case SAMPLE_EVENT:
-                    Map<String, Object> sample = DriverSampleFactory.parseSample(eventValue, db, config);
+                    Map<String, Object> sample = DriverSampleFactory.parseSample((String)eventValue, db, config);
                     log.info("Received SAMPLE event: " + sample);
                     Platform.runLater(()->model.publishSample(sample));
+                    break;
+                case CONFIG_CHANGE_EVENT:
+                    Platform.runLater(()->model.setParams((JSONObject) eventValue));
                     break;
             }
         }

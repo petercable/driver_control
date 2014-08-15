@@ -52,8 +52,13 @@ public class ZmqDriverInterface extends DriverInterface {
 
                 if (reply != null) {
                     log.debug("REPLY = {}, numObservers = {}", reply, countObservers());
-                    setChanged();
-                    notifyObservers(reply);
+                    try {
+                        setChanged();
+                        notifyObservers(reply);
+                    }
+                    catch (Exception e) {
+                        log.error("Exception notifying observers: {}", e.getMessage());
+                    }
                 } else {
                     log.debug("Empty message received in event loop");
                 }

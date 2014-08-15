@@ -44,6 +44,8 @@ public abstract class DriverInterface extends Observable {
 
     public JSONObject getMetadata() {
         Object reply = sendCommand(DriverCommandEnum.GET_CONFIG_METADATA, 5);
+        if (reply instanceof String)
+            return (JSONObject) JSONValue.parse((String)reply);
         if (reply instanceof JSONObject)
             return (JSONObject) reply;
         return null;
@@ -66,7 +68,9 @@ public abstract class DriverInterface extends Observable {
     }
 
     public Object getResource(String... resources) {
-        return sendCommand(DriverCommandEnum.GET_RESOURCE, resources);
+        Object reply = sendCommand(DriverCommandEnum.GET_RESOURCE, resources);
+        log.debug("getResource reply = {}", reply);
+        return reply;
     }
 
     public Object setResource(String parameters) {
@@ -82,7 +86,10 @@ public abstract class DriverInterface extends Observable {
         log.debug("Sending command: {}", command);
         String reply = _sendCommand(command, timeout);
         log.debug("Received reply: {}", reply);
-        Object obj = JSONValue.parse(reply);
+        Object obj = null;
+        if (reply == null)
+            return obj;
+        obj = JSONValue.parse(reply);
         log.debug("Parsed reply: {}", obj);
         return obj;
     }

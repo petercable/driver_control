@@ -53,6 +53,7 @@ public class DriverModel {
     }
 
     public void parseMetadata(JSONObject metadata) {
+        log.debug("parseMetadata: {}", metadata);
         JSONObject _commands = (JSONObject) metadata.get("commands");
         JSONObject _parameters = (JSONObject) metadata.get("parameters");
         for (Object _name: _commands.keySet()) {

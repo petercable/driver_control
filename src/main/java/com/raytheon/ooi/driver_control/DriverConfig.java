@@ -109,4 +109,18 @@ public class DriverConfig {
             } catch (ArrayIndexOutOfBoundsException ignore) { }
         }
     }
+
+    private int getPort(String filename) throws IOException {
+        Path path = Paths.get(filename);
+        String contents = new String(Files.readAllBytes(path));
+        return Integer.parseInt(contents.trim());
+    }
+
+    public int getCommandPort() throws IOException {
+        return getPort(commandPortFile);
+    }
+
+    public int getEventPort() throws IOException {
+        return getPort(eventPortFile);
+    }
 }

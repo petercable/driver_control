@@ -30,9 +30,6 @@ import org.json.simple.JSONObject;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.*;
 
@@ -142,12 +139,6 @@ public class ControlWindow {
         this.model.getParamsSettableProperty().addListener(settableListener);
         this.model.sampleTypes.addListener(sampleChangeListener);
         this.model.getConnectionProperty().addListener(connectionChangeListener);
-    }
-
-    private int getPort(String filename) throws Exception {
-        Path path = Paths.get(filename);
-        String contents = new String(Files.readAllBytes(path));
-        return Integer.parseInt(contents.trim());
     }
 
     public void selectCommand(MouseEvent event) {
@@ -287,13 +278,14 @@ public class ControlWindow {
         DriverConfig config = this.getConfig();
         model.setStatus("Connecting to driver...");
         try {
-            String host = config.getHost();
-            int eventPort = getPort(config.getEventPortFile());
-            int commandPort = getPort(config.getCommandPortFile());
-            driverInterface = new ZmqDriverInterface(host, commandPort, eventPort);
+            driverInterface = new ZmqDriverInterface(config.getHost(), config.getCommandPort(), config.getEventPort());
             driverInterface.addObserver(eventHandler);
+            getMetadata();
+            configure();
+            connect();
+            discover();
+            getParams();
             model.setStatus("Connecting to driver...complete");
-
         } catch (Exception e) {
             e.printStackTrace();
             Action response = Dialogs.create()
@@ -384,13 +376,14 @@ public class ControlWindow {
     public void getParams() {
         if (! checkController()) return;
         model.setStatus("Getting parameters...");
-        driverInterface.getResource("DRIVER_PARAMETER_ALL");
+        model.setParams((JSONObject) driverInterface.getResource("DRIVER_PARAMETER_ALL"));
     }
 
     public void getMetadata() {
         if (! checkController()) return;
         model.setStatus("Getting metadata...");
-        driverInterface.getMetadata();
+        JSONObject metadata = driverInterface.getMetadata();
+        model.parseMetadata(metadata);
     }
 
     public void discover() {
@@ -400,6 +393,7 @@ public class ControlWindow {
             driverInterface.discoverState();
             model.setStatus("Discovering protocol state...done");
             updateProtocolState();
+            getCapabilities();
         }
     }
 
