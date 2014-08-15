@@ -1,5 +1,6 @@
 package com.raytheon.ooi.driver_control;
 
+import com.raytheon.ooi.common.Constants;
 import com.raytheon.ooi.preload.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -18,16 +19,6 @@ import static java.nio.file.StandardOpenOption.APPEND;
 import static java.nio.file.StandardOpenOption.CREATE;
 
 public class DriverSampleFactory {
-    public static final String STREAM_NAME = "stream_name";
-    public static final String QUALITY_FLAG = "quality_flag";
-    public static final String PREFERRED_TIMESTAMP = "preferred_timestamp";
-    public static final String PORT_TIMESTAMP = "port_timestamp";
-    public static final String DRIVER_TIMESTAMP = "driver_timestamp";
-    public static final String PKT_FORMAT_ID = "pkt_format_id";
-    public static final String PKT_VERSION = "pkt_version";
-    public static final String VALUE = "value";
-    public static final String VALUES = "values";
-    public static final String VALUE_ID = "value_id";
     private static PreloadDatabase db = SqlitePreloadDatabase.getInstance();
     private static Logger log = LogManager.getLogger("DriverSampleFactory");
 
@@ -41,29 +32,29 @@ public class DriverSampleFactory {
 
         log.debug(json);
 
-        JSONArray json_values = (JSONArray) json.get(VALUES);
+        JSONArray json_values = (JSONArray) json.get(Constants.VALUES);
 
-        map.put(STREAM_NAME, json.get(STREAM_NAME));
-        map.put(PREFERRED_TIMESTAMP, json.get(PREFERRED_TIMESTAMP));
-        map.put(QUALITY_FLAG, json.get(QUALITY_FLAG));
-        map.put(PORT_TIMESTAMP, json.get(PORT_TIMESTAMP));
-        map.put(DRIVER_TIMESTAMP, json.get(DRIVER_TIMESTAMP));
-        map.put(PKT_FORMAT_ID, json.get(PKT_FORMAT_ID));
-        map.put(PKT_VERSION, json.get(PKT_VERSION));
+        map.put(Constants.STREAM_NAME, json.get(Constants.STREAM_NAME));
+        map.put(Constants.PREFERRED_TIMESTAMP, json.get(Constants.PREFERRED_TIMESTAMP));
+        map.put(Constants.QUALITY_FLAG, json.get(Constants.QUALITY_FLAG));
+        map.put(Constants.PORT_TIMESTAMP, json.get(Constants.PORT_TIMESTAMP));
+        map.put(Constants.DRIVER_TIMESTAMP, json.get(Constants.DRIVER_TIMESTAMP));
+        map.put(Constants.PKT_FORMAT_ID, json.get(Constants.PKT_FORMAT_ID));
+        map.put(Constants.PKT_VERSION, json.get(Constants.PKT_VERSION));
 
         log.trace("Loading instrument supplied values into sample object...");
         for (Object json_value : json_values) {
             log.debug(json_value);
             JSONObject element = (JSONObject) json_value;
-            Object value = element.get(VALUE);
+            Object value = element.get(Constants.VALUE);
             if (value == null) value = "";
-            map.put((String) element.get(VALUE_ID), value);
+            map.put((String) element.get(Constants.VALUE_ID), value);
         }
 
         log.debug(json);
         log.debug(db);
 
-        DataStream stream = db.getStream((String) json.get(STREAM_NAME));
+        DataStream stream = db.getStream((String) json.get(Constants.STREAM_NAME));
         Map<String, DataParameter> params = stream.getParams();
 
         // make two passes, L1 data needs to be available before L2 can be calculated
@@ -129,7 +120,7 @@ public class DriverSampleFactory {
     public static void writeData(Map<String, Object> map, Map<String, DataParameter> params, DriverConfig config) {
         List<String> names = new ArrayList<>(params.keySet());
         Collections.sort(names);
-        Path outputFile = Paths.get(config.getTemp(), config.getScenario(), map.get(STREAM_NAME) + ".csv");
+        Path outputFile = Paths.get(config.getTemp(), config.getScenario(), map.get(Constants.STREAM_NAME) + ".csv");
         boolean writeHeader = false;
         if (!Files.exists(outputFile))
             writeHeader = true;
