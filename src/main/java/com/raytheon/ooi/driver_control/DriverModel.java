@@ -13,8 +13,9 @@ import org.json.simple.JSONObject;
 import java.util.*;
 
 public class DriverModel {
+    private final static DriverModel INSTANCE = new DriverModel();
     private DriverConfig config;
-    private static Logger log = LogManager.getLogger("DriverModel");
+    private static Logger log = LogManager.getLogger(DriverModel.class);
 
     protected final ObservableList<ProtocolCommand> commandList = FXCollections.observableArrayList();
     protected final ObservableList<Parameter> paramList = FXCollections.observableArrayList();
@@ -30,9 +31,12 @@ public class DriverModel {
 
     private SimpleBooleanProperty paramsSettable = new SimpleBooleanProperty();
 
-    public DriverModel() {
+    public static DriverModel getInstance() {
+        return INSTANCE;
+    }
 
-        log.debug("Created driver model");
+    private DriverModel() {
+
     }
 
     public String maybeString(Object s) {

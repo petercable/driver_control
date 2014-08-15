@@ -48,12 +48,13 @@ public class ControlWindow {
     @FXML private TabPane tabPane;
 
     private TabPane sampleTabPane;
-    private DriverModel model = new DriverModel();
-    protected DriverInterface driverInterface;
-    private PreloadDatabase preload = SqlitePreloadDatabase.getInstance();
-    private DriverEventHandler eventHandler = new DriverEventHandler(model);
-    private static Logger log = LogManager.getLogger();
+    private static Logger log = LogManager.getLogger(ControlWindow.class);
     protected Process driverProcess = null;
+    protected DriverInterface driverInterface = null;
+
+    private final DriverModel model = DriverModel.getInstance();
+    private final PreloadDatabase preload = SqlitePreloadDatabase.getInstance();
+    private final DriverEventHandler eventHandler = new DriverEventHandler();
 
     private ChangeListener<Boolean> settableListener = new ChangeListener<Boolean>() {
         @Override
@@ -278,11 +279,6 @@ public class ControlWindow {
         try {
             driverInterface = new ZmqDriverInterface(config.getHost(), config.getCommandPort(), config.getEventPort());
             driverInterface.addObserver(eventHandler);
-            getMetadata();
-            configure();
-            connect();
-            discover();
-            getParams();
             model.setStatus("Connecting to driver...complete");
         } catch (Exception e) {
             e.printStackTrace();
@@ -305,7 +301,13 @@ public class ControlWindow {
                 }
             }
             model.setStatus("Connecting to driver...failed");
+            return;
         }
+        getMetadata();
+        configure();
+        connect();
+        discover();
+        getParams();
         updateProtocolState();
     }
 

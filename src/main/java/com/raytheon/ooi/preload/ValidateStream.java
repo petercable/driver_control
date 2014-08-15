@@ -1,7 +1,6 @@
 package com.raytheon.ooi.preload;
 
 import com.raytheon.ooi.driver_control.DriverModel;
-import com.raytheon.ooi.driver_control.DataStream;
 import org.apache.logging.log4j.LogManager;
 
 import java.math.BigInteger;

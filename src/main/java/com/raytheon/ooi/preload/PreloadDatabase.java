@@ -1,8 +1,5 @@
 package com.raytheon.ooi.preload;
 
-import com.raytheon.ooi.driver_control.DataFunction;
-import com.raytheon.ooi.driver_control.DataParameter;
-import com.raytheon.ooi.driver_control.DataStream;
 import com.raytheon.ooi.driver_control.DriverConfig;
 import org.apache.logging.log4j.LogManager;
 

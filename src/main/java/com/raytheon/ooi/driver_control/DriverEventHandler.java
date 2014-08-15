@@ -1,7 +1,5 @@
 package com.raytheon.ooi.driver_control;
 
-import com.raytheon.ooi.preload.PreloadDatabase;
-import com.raytheon.ooi.preload.SqlitePreloadDatabase;
 import javafx.application.Platform;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -15,17 +13,15 @@ import java.util.Observer;
 
 public class DriverEventHandler implements Observer {
 
-    private final DriverModel model;
-    private final PreloadDatabase db = SqlitePreloadDatabase.getInstance();
+    private final DriverModel model = DriverModel.getInstance();
+//    private final PreloadDatabase db = SqlitePreloadDatabase.getInstance();
     private DriverConfig config;
     private final static Logger log = LogManager.getLogger(DriverEventHandler.class);
     private final static String STATE_CHANGE_EVENT = "DRIVER_ASYNC_EVENT_STATE_CHANGE";
     private final static String SAMPLE_EVENT = "DRIVER_ASYNC_EVENT_SAMPLE";
     private final static String CONFIG_CHANGE_EVENT = "DRIVER_ASYNC_EVENT_CONFIG_CHANGE";
 
-    public DriverEventHandler(DriverModel model) {
-        this.model = model;
-    }
+    public DriverEventHandler() {}
 
     @Override
     public void update(Observable o, Object arg) {
