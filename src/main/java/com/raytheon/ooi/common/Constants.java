@@ -6,6 +6,7 @@ package com.raytheon.ooi.common;
 public class Constants {
     private Constants() {}
 
+    // Driver Commands
     public final static String PING                     = "driver_ping";
     public final static String INITIALIZE               = "initialize";
     public final static String CONFIGURE                = "configure";
@@ -26,9 +27,18 @@ public class Constants {
     public final static String GET_CAPABILITIES         = "get_resource_capabilities";
     public final static String EXECUTE_RESOURCE         = "execute_resource";
     public final static String STOP_DRIVER              = "stop_driver_process";
+
+    // Driver States
+    public final static String DRIVER_STATE_UNCONFIGURED = "DRIVER_STATE_UNCONFIGURED";
+    public final static String DRIVER_STATE_DISCONNECTED = "DRIVER_STATE_DISCONNECTED";
+    public final static String DRIVER_STATE_UNKNOWN      = "DRIVER_STATE_UNKNOWN";
+
+    // Driver Events
     public final static String STATE_CHANGE_EVENT       = "DRIVER_ASYNC_EVENT_STATE_CHANGE";
     public final static String SAMPLE_EVENT             = "DRIVER_ASYNC_EVENT_SAMPLE";
     public final static String CONFIG_CHANGE_EVENT      = "DRIVER_ASYNC_EVENT_CONFIG_CHANGE";
+
+    // Driver Streams
     public static final String STREAM_NAME              = "stream_name";
     public static final String QUALITY_FLAG             = "quality_flag";
     public static final String PREFERRED_TIMESTAMP      = "preferred_timestamp";
@@ -39,6 +49,8 @@ public class Constants {
     public static final String VALUE                    = "value";
     public static final String VALUES                   = "values";
     public static final String VALUE_ID                 = "value_id";
+
+    // Preload
     public static final String PARAMETER_TYPE_QUANTITY  = "quantity";
     public static final String PARAMETER_TYPE_FUNCTION  = "function";
     public static final String PARAMETER_TYPE_ARRAY     = "array<quantity>";

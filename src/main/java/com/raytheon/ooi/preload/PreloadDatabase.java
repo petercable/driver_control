@@ -95,6 +95,7 @@ public abstract class PreloadDatabase {
                 String[] params = rawParams.split(",");
                 for (String id: params) {
                     DataParameter dp = getParameterById(id);
+                    dp.setStream(ds);
                     ds.getParams().put(dp.getName(), dp);
                 }
             }

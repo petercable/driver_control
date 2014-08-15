@@ -1,5 +1,6 @@
 package com.raytheon.ooi.driver_control;
 
+import com.raytheon.ooi.common.Constants;
 import com.raytheon.ooi.driver_interface.DriverInterface;
 import com.raytheon.ooi.driver_interface.ZmqDriverInterface;
 import com.raytheon.ooi.preload.PreloadDatabase;
@@ -151,7 +152,7 @@ public class ControlWindow {
                 model.commandList.clear();
                 new Thread(()-> {
                     driverInterface.execute(command.getName());
-                    getCapabilities();
+                    Platform.runLater(this::getCapabilities);
                 }).start();
             }
     }
@@ -236,7 +237,7 @@ public class ControlWindow {
         log.debug("loading coefficients from file: {}", file);
         if (file != null) {
             try {
-                model.getConfig().setCoefficients(file);
+                model.setCoefficients(file);
             } catch (IOException e) {
                 Dialogs.create()
                         .owner(null)
@@ -282,33 +283,28 @@ public class ControlWindow {
             model.setStatus("Connecting to driver...complete");
         } catch (Exception e) {
             e.printStackTrace();
-            Action response = Dialogs.create()
+            Dialogs.create()
                     .owner(null)
                     .title("Driver Protocol Connection Exception")
-                    .masthead("Exception occurred when attempting to connect to the protocol driver.")
-                    .message("Unable to connect to driver. Would you like to launch the driver now?")
-                    .actions(Dialog.Actions.YES, Dialog.Actions.NO)
-                    .showConfirm();
-            if (response == Dialog.Actions.YES) {
-                try {
-                    this.launchDriver();
-                } catch (IOException | InterruptedException e1) {
-                    Dialogs.create()
-                            .owner(null)
-                            .title("Launch Driver")
-                            .message("Exception occurred launching driver.")
-                            .showException(e);
-                }
-            }
+                    .message("Exception occurred when attempting to connect to the protocol driver.")
+                    .showException(e);
             model.setStatus("Connecting to driver...failed");
             return;
         }
         getMetadata();
-        configure();
-        connect();
-        discover();
-        getParams();
         updateProtocolState();
+        switch (model.getState()) {
+            case Constants.DRIVER_STATE_UNCONFIGURED:
+                configure();
+            case Constants.DRIVER_STATE_DISCONNECTED:
+                connect();
+            case Constants.DRIVER_STATE_UNKNOWN:
+                discover();
+            default:
+                getParams();
+                updateProtocolState();
+                break;
+        }
     }
 
     private boolean checkController() {
@@ -335,7 +331,7 @@ public class ControlWindow {
     if (! checkController()) return;
         updateProtocolState();
         String status;
-        if (Objects.equals(model.getState(), "DRIVER_STATE_UNCONFIGURED")) {
+        if (Objects.equals(model.getState(), Constants.DRIVER_STATE_UNCONFIGURED)) {
             model.setStatus("Configuring driver...");
             driverInterface.configurePortAgent(model.getConfig().getPortAgentConfig());
             driverInterface.initParams(model.getConfig().getStartupConfig());
@@ -352,7 +348,7 @@ public class ControlWindow {
     public void connect() {
         if (! checkController()) return;
         updateProtocolState();
-        if (Objects.equals(model.getState(), "DRIVER_STATE_DISCONNECTED")) {
+        if (Objects.equals(model.getState(), Constants.DRIVER_STATE_DISCONNECTED)) {
             model.setStatus("Connecting to instrument...");
             driverInterface.connect();
             model.setStatus("Connecting to instrument...done");
@@ -388,7 +384,7 @@ public class ControlWindow {
 
     public void discover() {
         updateProtocolState();
-        if (Objects.equals(model.getState(), "DRIVER_STATE_UNKNOWN")) {
+        if (Objects.equals(model.getState(), Constants.DRIVER_STATE_UNKNOWN)) {
             model.setStatus("Discovering protocol state...");
             driverInterface.discoverState();
             model.setStatus("Discovering protocol state...done");

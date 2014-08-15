@@ -6,16 +6,23 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVRecord;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.Reader;
 import java.util.*;
 
 public class DriverModel {
     private final static DriverModel INSTANCE = new DriverModel();
     private DriverConfig config;
+    private Map<String, String> coefficients = new HashMap<>();
     private static Logger log = LogManager.getLogger(DriverModel.class);
 
     protected final ObservableList<ProtocolCommand> commandList = FXCollections.observableArrayList();
@@ -158,6 +165,27 @@ public class DriverModel {
                 e.printStackTrace();
             }
         });
+    }
+
+    public Map<String, String> getCoefficients() {
+        return coefficients;
+    }
+
+    public void setCoefficients(Map<String, String> coefficients) {
+        this.coefficients = coefficients;
+    }
+
+    public void setCoefficients(File file) throws IOException {
+        Reader in = new FileReader(file);
+        Iterable<CSVRecord> records = CSVFormat.EXCEL.parse(in);
+        for (CSVRecord record: records) {
+            try {
+                String name = record.get(1);
+                String value = record.get(2);
+                log.debug("Found coefficient {} : {}", name, value);
+                coefficients.put(name, value);
+            } catch (ArrayIndexOutOfBoundsException ignore) { }
+        }
     }
 
     public boolean getParamsSettable() {

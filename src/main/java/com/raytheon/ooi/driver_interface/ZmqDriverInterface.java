@@ -57,6 +57,7 @@ public class ZmqDriverInterface extends DriverInterface {
                         notifyObservers(reply);
                     }
                     catch (Exception e) {
+                        e.printStackTrace();
                         log.error("Exception notifying observers: {}", e.getMessage());
                     }
                 } else {
