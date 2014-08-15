@@ -13,6 +13,7 @@ import java.io.BufferedReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -69,9 +70,14 @@ public class DataParameter {
     }
 
     public String toString() {
-        return String.format("ID: %s NAME: %s TYPE: %s ENCODING: %s FUNCID: %s FUNCMAP: %s",
+        String className = "Null";
+        if (value != null)
+            className = value.getClass().toString();
+        return String.format("ID: %s NAME: %s VALUE: %s VALUE_CLASS: %s TYPE: %s ENCODING: %s FUNCID: %s FUNCMAP: %s",
                 id,
                 name,
+                getValue(),
+                className,
                 parameterType,
                 valueEncoding,
                 parameterFunctionId,
@@ -82,7 +88,7 @@ public class DataParameter {
         return id;
     }
 
-    public Object getValue() {
+    public synchronized Object getValue() {
         // do something here
         if (parameterType.equals(Constants.PARAMETER_TYPE_FUNCTION) && value == null) {
             value = calculateValue();
@@ -110,6 +116,7 @@ public class DataParameter {
             } else if (stream.containsParam(name)) {
                 args.put(key, (String) stream.getParamValue(name));
             } else {
+                log.debug("DataParameter::calculateValue - using dummy value for {} {}", name, key);
                 isDummy = true;
                 args.put(key, "0");
             }
@@ -187,5 +194,108 @@ public class DataParameter {
 
 
         return 0;
+    }
+    
+    public void validate() {
+        switch (parameterType) {
+            case Constants.PARAMETER_TYPE_QUANTITY:
+            case Constants.PARAMETER_TYPE_FUNCTION:
+                validateType(getValue());
+                break;
+            case Constants.PARAMETER_TYPE_ARRAY:
+                if (getValue() instanceof String) {
+                    Object array = JSONValue.parse((String) getValue());
+                    if (array instanceof JSONArray) {
+                        log.debug("YAHOO, found JSONArray: {}", array);
+                    }
+                else if (getValue() instanceof Byte[]) {
+                        log.debug("Found byte array: {}", getValue());
+                    }
+                } else {
+                    log.debug("Found some other sort of object: {} {}", getValue(), getValue().getClass().toString());
+                }
+                break;
+            default:
+                log.error("Missing parameterType from switch statement in validate: {}", this);
+        }
+    }
+        
+    public boolean validateType(Object thisValue) {
+        try{
+            if (thisValue == null) return false;
+            Long longValue;
+            Double doubleValue;
+            boolean badLong = false;
+            if (thisValue instanceof Integer) {
+                longValue = ((Integer) thisValue).longValue();
+                doubleValue = ((Integer) thisValue).doubleValue();
+            } else if (thisValue instanceof Long) {
+                longValue = (Long) thisValue;
+                doubleValue = ((Long) thisValue).doubleValue();
+            } else if (thisValue instanceof Double) {
+                doubleValue = (Double) thisValue;
+                longValue = 0l;
+                badLong = true;
+            } else {
+                log.debug("Non-numeric type for this parameter: {}", this.toString());
+                return true;
+            }
+
+            switch (valueEncoding) {
+                // INTS
+                case Constants.VALUE_TYPE_INT8:
+                    if (longValue > Byte.MAX_VALUE || longValue < Byte.MIN_VALUE || badLong)
+                        log.error("VALUE OVERFLOW: value {} found in {} parameter {}", thisValue, valueEncoding, name);
+                    break;
+                case Constants.VALUE_TYPE_INT16:
+                    if (longValue > Short.MAX_VALUE || longValue < Short.MIN_VALUE || badLong)
+                        log.error("VALUE OVERFLOW: value {} found in {} parameter {}", thisValue, valueEncoding, name);
+                    break;
+                case Constants.VALUE_TYPE_INT32:
+                    if (longValue > Integer.MAX_VALUE || longValue < Integer.MIN_VALUE || badLong)
+                        log.error("VALUE OVERFLOW: value {} found in {} parameter {}", thisValue, valueEncoding, name);
+                    break;
+                case Constants.VALUE_TYPE_INT64:
+                    if (longValue > Long.MAX_VALUE || longValue < Long.MIN_VALUE || badLong)
+                        log.error("VALUE OVERFLOW: value {} found in {} parameter {}", thisValue, valueEncoding, name);
+                    break;
+                // FLOATS
+                case Constants.VALUE_TYPE_FLOAT32:
+                    if (doubleValue > Float.MAX_VALUE || doubleValue < -Float.MAX_VALUE)
+                        log.error("VALUE OVERFLOW: value {} found in {} parameter {}", thisValue, valueEncoding, name);
+                    break;
+                case Constants.VALUE_TYPE_FLOAT64:
+                    if (doubleValue > Double.MAX_VALUE || doubleValue < -Double.MAX_VALUE)
+                        log.error("VALUE OVERFLOW: value {} found in {} parameter {}", thisValue, valueEncoding, name);
+                    break;
+                // UINTS
+                case Constants.VALUE_TYPE_UINT8:
+                    if (longValue > (Byte.MAX_VALUE*2) || longValue < (Byte.MIN_VALUE*2) || badLong)
+                        log.error("VALUE OVERFLOW: value {} found in {} parameter {}", thisValue, valueEncoding, name);
+                    break;
+                case Constants.VALUE_TYPE_UINT16:
+                    if (longValue > (Short.MAX_VALUE*2) || longValue < (Short.MIN_VALUE*2) || badLong)
+                        log.error("VALUE OVERFLOW: value {} found in {} parameter {}", thisValue, valueEncoding, name);
+                    break;
+                case Constants.VALUE_TYPE_UINT32:
+                    if (longValue > (Long.MAX_VALUE) || longValue < Long.MIN_VALUE || badLong)
+                        log.error("VALUE OVERFLOW: value {} found in {} parameter {}", thisValue, valueEncoding, name);
+                    break;
+                case Constants.VALUE_TYPE_UINT64:
+                    //TODO || (Integer) value < Byte.MIN_VALUE)
+                    BigInteger int1 = new BigInteger((String)thisValue);
+                    if(int1.compareTo(BigInteger.valueOf(Long.MAX_VALUE).multiply(BigInteger.valueOf(2))) == 1){
+                        log.error("VALUE OVERFLOW: value {} found in {} parameter {}", thisValue, valueEncoding, name);
+                    }
+                    break;
+                default:
+                    log.error("UNEXPECTED VALUE TYPE {} for parameter type {} for parameter {}", valueEncoding, parameterType, name);
+                    log.error("Parameter: {}", this.toString());
+            }
+        } catch (NumberFormatException | ClassCastException e){
+            e.printStackTrace();
+            log.error("Expected VALUE TYPE {}, received VALUE {} for parameter {}", valueEncoding, thisValue, name);
+        }
+        return true;
     }
 }

@@ -10,6 +10,7 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 
+import java.util.Base64;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -42,6 +43,9 @@ public class DriverSampleFactory {
             JSONObject element = (JSONObject) json_value;
             Object value = element.get(Constants.VALUE);
             if (value == null) value = "";
+            if (element.containsKey("binary")) {
+                value = Base64.getDecoder().decode((String)value);
+            }
             map.put((String) element.get(Constants.VALUE_ID), value);
         }
 
