@@ -34,7 +34,6 @@ public class DataParameter {
     private final DriverModel model = DriverModel.getInstance();
     private static Logger log = LogManager.getLogger(DataParameter.class);
     private final PreloadDatabase preload = SqlitePreloadDatabase.getInstance();
-    Map<String, String> coefficients = model.getCoefficients();
 
     public DataParameter(String id, String name, String parameterType, String valueEncoding,
                          String parameterFunctionId, String parameterFunctionMap) {
@@ -113,8 +112,8 @@ public class DataParameter {
             String key = (String) o;
             String id = (String) functionMap.get(key);
             String paramName = preload.getParameterName(id);
-            if (coefficients.containsKey(id)) {
-                args.put(key, coefficients.get(id));
+            if (model.getCoefficients().containsKey(id)) {
+                args.put(key, model.getCoefficients().get(id));
             } else if (stream.containsParam(paramName)) {
                 args.put(key, stream.getParamValue(paramName));
             } else {

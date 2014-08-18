@@ -12,6 +12,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import org.json.simple.JSONValue;
 
 import java.io.File;
 import java.io.FileReader;
@@ -28,7 +29,7 @@ public class DriverModel {
     private DriverConfig config;
 
     // coefficient data stored here
-    private final Map<String, String> coefficients = new HashMap<>();
+    private final Map<String, Object> coefficients = new HashMap<>();
 
     // storage for commandMetadata, parameterMetadata, samples
     protected final ObservableList<ProtocolCommand> commandList = FXCollections.observableArrayList();
@@ -181,11 +182,11 @@ public class DriverModel {
         });
     }
 
-    public Map<String, String> getCoefficients() {
+    public Map<String, Object> getCoefficients() {
         return coefficients;
     }
 
-    public void updateCoefficients(Map<String, String> coefficients) {
+    public void updateCoefficients(Map<String, Object> coefficients) {
         this.coefficients.putAll(coefficients);
     }
 
@@ -195,7 +196,8 @@ public class DriverModel {
         for (CSVRecord record: records) {
             try {
                 String name = record.get(1);
-                String value = record.get(2);
+                Object value = record.get(2);
+                value = JSONValue.parse((String)value);
                 log.debug("Found coefficient {} : {}", name, value);
                 coefficients.put(name, value);
             } catch (ArrayIndexOutOfBoundsException ignore) { }
