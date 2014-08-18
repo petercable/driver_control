@@ -68,7 +68,7 @@ public class DataStream {
     }
 
     public void validate() {
-        params.values().parallelStream().forEach(DataParameter::validate);
+        params.values().stream().forEach(DataParameter::validate);
     }
 
     public void archive() {

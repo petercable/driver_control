@@ -22,18 +22,18 @@ public abstract class PreloadDatabase {
 
     public abstract void connect() throws Exception;
 
-    public void getParameter(String id) {
+    public String getParameterName(String id) {
         log.debug("getParameters: {}", id);
         try (Statement stmt = connection.createStatement()) {
-            String sql = String.format("SELECT id FROM parameterdefs WHERE id='%s';", id);
+            String sql = String.format("SELECT name FROM parameterdefs WHERE id='%s';", id);
             ResultSet rs = stmt.executeQuery(sql);
-            while (rs.next()) {
-                log.debug(rs.getRow());
-                log.debug(rs.getString(1));
+            if (rs.next()) {
+                return rs.getString(1);
             }
         } catch (SQLException e) {
             log.debug("exception: " + e);
         }
+        return "";
     }
 
     public String getEggUrl(String scenario) {

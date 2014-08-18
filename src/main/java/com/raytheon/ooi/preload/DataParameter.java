@@ -8,6 +8,7 @@ import org.apache.logging.log4j.Logger;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
+import org.json.simple.parser.ParseException;
 
 import java.io.BufferedReader;
 import java.io.FileWriter;
@@ -106,19 +107,20 @@ public class DataParameter {
         log.debug("FunctionMap: {}", functionMap);
 
         // build an args map
-        Map<String, String> args = new HashMap<>();
+        Map<String, Object> args = new HashMap<>();
 
         for (Object o : functionMap.keySet()) {
             String key = (String) o;
-            String name = (String) functionMap.get(key);
-            if (coefficients.containsKey(name)) {
-                args.put(key, coefficients.get(name));
-            } else if (stream.containsParam(name)) {
-                args.put(key, (String) stream.getParamValue(name));
+            String id = (String) functionMap.get(key);
+            String paramName = preload.getParameterName(id);
+            if (coefficients.containsKey(id)) {
+                args.put(key, coefficients.get(id));
+            } else if (stream.containsParam(paramName)) {
+                args.put(key, stream.getParamValue(paramName));
             } else {
-                log.debug("DataParameter::calculateValue - using dummy value for {} {}", name, key);
+                log.debug("DataParameter::calculateValue - using dummy value for {} {} {}", key, id, paramName);
                 isDummy = true;
-                args.put(key, "0");
+                args.put(key, 0);
             }
         }
         if (args.size() > 0) {
@@ -131,7 +133,7 @@ public class DataParameter {
         this.stream = stream;
     }
 
-    public static Object applyFunction(DataFunction df, Map<String, String> args) {
+    public static Object applyFunction(DataFunction df, Map<String, Object> args) {
         StringJoiner joiner = new StringJoiner(", ");
         JSONArray functionArgs = (JSONArray) JSONValue.parse(df.getArgs().replace("'", "\""));
         for (int i = 0; i < functionArgs.size(); i++) {
@@ -145,23 +147,31 @@ public class DataParameter {
             FileWriter writer = new FileWriter(ion_function.toFile());
             // import numpy
             writer.append("import numpy\n");
+            writer.append("import json\n");
             // import the correct function
             if (df.getOwner() != null)
                 writer.append(String.format("from %s import %s\n", df.getOwner(), df.getFunction()));
             // build the function inputs
             for (String key : args.keySet()) {
-                String value = args.get(key);
+                Object value = args.get(key);
+                String valueString;
                 // check and see if the value is already a list
                 // if not, make it a list and wrap the list in numpy.array
                 // this is a workaround to ion_functions expecting lists of data
                 // rather than one record at a time.
-                if (!value.startsWith("[")) value = "[" + value + "]";
+                if (value instanceof String) {
+                    valueString = (String) value;
+                    if (!valueString.startsWith("[")) value = "['" + value + "']";
+                } else {
+                    value = String.format("[%s]", value);
+                }
                 writer.append(String.format("%s = numpy.array(%s)\n", key, value));
             }
             if (df.getOwner() != null)
-                writer.append(String.format("print %s(%s)\n", df.getFunction(), joiner.toString()));
+                writer.append(String.format("result = %s(%s)\n", df.getFunction(), joiner.toString()));
             else
-                writer.append(String.format("print %s\n", df.getFunction()));
+                writer.append(String.format("result = %s\n", df.getFunction()));
+            writer.append("print json.dumps(list(result))\n");
             writer.close();
             log.debug("ION_FUNCTION: {}", ion_function);
             String[] command = {"python", ion_function.toString()};
@@ -182,8 +192,14 @@ public class DataParameter {
                 log.debug("No response from ion_functions...");
                 return 0;
             }
-            log.debug(line);
-            JSONArray rvalue = (JSONArray) JSONValue.parse(line);
+            log.debug("Read from ion_function: {}", line);
+            JSONArray rvalue = null;
+            try {
+                rvalue = (JSONArray) JSONValue.parseWithException(line);
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
+            log.debug("Parsed result from ion_function: {}", rvalue);
             if (rvalue == null)
                 return 0;
             return rvalue.get(0);
@@ -197,7 +213,7 @@ public class DataParameter {
     }
     
     public void validate() {
-        if (value == null)
+        if (getValue() == null)
             log.error("Missing required value from stream: {}", this);
         switch (parameterType) {
             case Constants.PARAMETER_TYPE_QUANTITY:
