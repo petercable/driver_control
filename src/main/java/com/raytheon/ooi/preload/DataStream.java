@@ -1,6 +1,6 @@
 package com.raytheon.ooi.preload;
 
-import com.raytheon.ooi.driver_control.DriverConfig;
+import com.raytheon.ooi.driver_control.DriverModel;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -15,11 +15,11 @@ import static java.nio.file.StandardOpenOption.APPEND;
 import static java.nio.file.StandardOpenOption.CREATE;
 
 public class DataStream {
-    private String name;
-    private DriverConfig config;
-    private Map<String, DataParameter> params = new HashMap<>();
-    private Map<String, Object> metadata = new HashMap<>();
-    private static Logger log = LogManager.getLogger(DataStream.class);
+    private final String name;
+    private final DriverModel model = DriverModel.getInstance();
+    private final Map<String, DataParameter> params = new HashMap<>();
+    private final Map<String, Object> metadata = new HashMap<>();
+    private final static Logger log = LogManager.getLogger(DataStream.class);
 
     public DataStream(String name) {
         this.name = name;
@@ -74,7 +74,7 @@ public class DataStream {
     public void archive() {
         List<String> names = new ArrayList<>(params.keySet());
         Collections.sort(names);
-        Path outputFile = Paths.get(config.getTemp(), config.getScenario(), name + ".csv");
+        Path outputFile = Paths.get(model.getConfig().getTemp(), model.getConfig().getScenario(), name + ".csv");
         boolean writeHeader = false;
         if (!Files.exists(outputFile))
             writeHeader = true;
@@ -110,9 +110,5 @@ public class DataStream {
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    public void setConfig(DriverConfig config) {
-        this.config = config;
     }
 }

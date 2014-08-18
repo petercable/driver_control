@@ -15,9 +15,7 @@ import java.util.Observer;
 public class DriverEventHandler implements Observer {
 
     private final DriverModel model = DriverModel.getInstance();
-    private DriverConfig config;
     private final static Logger log = LogManager.getLogger(DriverEventHandler.class);
-
 
     public DriverEventHandler() {}
 
@@ -36,7 +34,7 @@ public class DriverEventHandler implements Observer {
                     Platform.runLater(()->model.setState((String)eventValue));
                     break;
                 case Constants.SAMPLE_EVENT:
-                    Map<String, Object> sample = DriverSampleFactory.parseSample((String)eventValue, config);
+                    Map<String, Object> sample = DriverSampleFactory.parseSample((String)eventValue);
                     log.info("Received SAMPLE event: " + sample);
                     Platform.runLater(()->model.publishSample(sample));
                     break;
@@ -45,9 +43,5 @@ public class DriverEventHandler implements Observer {
                     break;
             }
         }
-    }
-
-    public void setConfig(DriverConfig config) {
-        this.config = config;
     }
 }

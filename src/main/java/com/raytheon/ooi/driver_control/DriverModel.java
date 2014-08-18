@@ -20,23 +20,30 @@ import java.io.Reader;
 import java.util.*;
 
 public class DriverModel {
+    // static members, including singleton instance
     private final static DriverModel INSTANCE = new DriverModel();
-    private DriverConfig config;
-    private Map<String, String> coefficients = new HashMap<>();
     private static Logger log = LogManager.getLogger(DriverModel.class);
 
+    // config is null until loaded
+    private DriverConfig config;
+
+    // coefficient data stored here
+    private final Map<String, String> coefficients = new HashMap<>();
+
+    // storage for commands, parameters, samples
     protected final ObservableList<ProtocolCommand> commandList = FXCollections.observableArrayList();
     protected final ObservableList<Parameter> paramList = FXCollections.observableArrayList();
     protected final ObservableList<String> sampleTypes = FXCollections.observableArrayList();
-
     protected Map<String, ObservableList<Map<String, Object>>> sampleLists = new HashMap<>();
     protected Map<String, ProtocolCommand> commands = new HashMap<>();
     protected Map<String, Parameter> parameters = new HashMap<>();
 
+    // properties to hold protocol state, connection and interface status
     private SimpleStringProperty state = new SimpleStringProperty();
     private SimpleStringProperty status = new SimpleStringProperty();
     private SimpleStringProperty connection = new SimpleStringProperty();
 
+    // are params settable in current state
     private SimpleBooleanProperty paramsSettable = new SimpleBooleanProperty();
 
     public static DriverModel getInstance() {
@@ -171,11 +178,11 @@ public class DriverModel {
         return coefficients;
     }
 
-    public void setCoefficients(Map<String, String> coefficients) {
-        this.coefficients = coefficients;
+    public void updateCoefficients(Map<String, String> coefficients) {
+        this.coefficients.putAll(coefficients);
     }
 
-    public void setCoefficients(File file) throws IOException {
+    public void updateCoefficients(File file) throws IOException {
         Reader in = new FileReader(file);
         Iterable<CSVRecord> records = CSVFormat.EXCEL.parse(in);
         for (CSVRecord record: records) {
@@ -200,14 +207,6 @@ public class DriverModel {
         return paramsSettable;
     }
 
-    public void setConfig(DriverConfig config) {
-        this.config = config;
-    }
-
-    public DriverConfig getConfig() {
-        return config;
-    }
-
     public String getStatus() {
         return status.get();
     }
@@ -230,5 +229,13 @@ public class DriverModel {
 
     public SimpleStringProperty getConnectionProperty() {
         return connection;
+    }
+
+    public DriverConfig getConfig() {
+        return config;
+    }
+
+    public void setConfig(DriverConfig config) {
+        this.config = config;
     }
 }

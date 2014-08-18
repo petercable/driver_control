@@ -49,7 +49,7 @@ public class ControlWindow {
     @FXML private TabPane tabPane;
 
     private TabPane sampleTabPane;
-    private static Logger log = LogManager.getLogger(ControlWindow.class);
+    private static final Logger log = LogManager.getLogger(ControlWindow.class);
     protected Process driverProcess = null;
     protected DriverInterface driverInterface = null;
 
@@ -197,10 +197,8 @@ public class ControlWindow {
     public void loadConfig(File file) {
         log.debug("loading configuration from file: {}", file);
         if (file != null) {
-            DriverConfig config;
-
             try {
-                config = new DriverConfig(file);
+                model.setConfig(new DriverConfig(file));
             } catch (IOException e) {
                 Dialogs.create()
                         .owner(null)
@@ -210,10 +208,8 @@ public class ControlWindow {
                 return;
             }
 
-            model.setConfig(config);
             try {
-                preload.connect(config);
-                eventHandler.setConfig(config);
+                preload.connect();
             } catch (Exception e) {
                 Dialogs.create()
                         .owner(null)
@@ -237,7 +233,7 @@ public class ControlWindow {
         log.debug("loading coefficients from file: {}", file);
         if (file != null) {
             try {
-                model.setCoefficients(file);
+                model.updateCoefficients(file);
             } catch (IOException e) {
                 Dialogs.create()
                         .owner(null)
@@ -248,9 +244,8 @@ public class ControlWindow {
         }
     }
 
-    public DriverConfig getConfig() {
-        DriverConfig config = model.getConfig();
-        if (config == null) {
+    public void getConfig() {
+        if (model.getConfig() == null) {
             Action response = Dialogs.create()
                     .owner(null)
                     .title("Test Configuration")
@@ -261,7 +256,6 @@ public class ControlWindow {
                 this.loadConfig();
             }
         }
-        return model.getConfig();
     }
 
 
@@ -275,10 +269,12 @@ public class ControlWindow {
 
     public void driverConnect() {
         // create model and controllers
-        DriverConfig config = this.getConfig();
         model.setStatus("Connecting to driver...");
         try {
-            driverInterface = new ZmqDriverInterface(config.getHost(), config.getCommandPort(), config.getEventPort());
+            driverInterface = new ZmqDriverInterface(
+                    model.getConfig().getHost(),
+                    model.getConfig().getCommandPort(),
+                    model.getConfig().getEventPort());
             driverInterface.addObserver(eventHandler);
             model.setStatus("Connecting to driver...complete");
         } catch (Exception e) {

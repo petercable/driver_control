@@ -1,6 +1,6 @@
 package com.raytheon.ooi.preload;
 
-import com.raytheon.ooi.driver_control.DriverConfig;
+import com.raytheon.ooi.driver_control.DriverModel;
 import org.apache.logging.log4j.LogManager;
 
 import java.sql.Connection;
@@ -18,8 +18,9 @@ import java.util.Map;
 public abstract class PreloadDatabase {
     protected Connection connection;
     protected static org.apache.logging.log4j.Logger log = LogManager.getLogger(PreloadDatabase.class);
+    protected final DriverModel model = DriverModel.getInstance();
 
-    public abstract void connect(DriverConfig config) throws Exception;
+    public abstract void connect() throws Exception;
 
     public void getParameter(String id) {
         log.debug("getParameters: {}", id);

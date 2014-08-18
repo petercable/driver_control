@@ -21,7 +21,7 @@ public class DriverSampleFactory {
     private DriverSampleFactory() {
     }
 
-    public static Map<String, Object> parseSample(String s, DriverConfig config) {
+    public static Map<String, Object> parseSample(String s) {
         Map<String, Object> map = new ConcurrentHashMap<>();
         JSONObject json = (JSONObject) JSONValue.parse(s);
 
@@ -52,7 +52,6 @@ public class DriverSampleFactory {
         // retrieve the stream definition from preload
         DataStream stream = db.getStream((String) json.get(Constants.STREAM_NAME));
         stream.setValues(map);
-        stream.setConfig(config);
 
         // validate the stream and archive the results
         stream.validate();

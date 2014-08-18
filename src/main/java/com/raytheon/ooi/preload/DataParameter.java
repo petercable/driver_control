@@ -197,6 +197,8 @@ public class DataParameter {
     }
     
     public void validate() {
+        if (value == null)
+            log.error("Missing required value from stream");
         switch (parameterType) {
             case Constants.PARAMETER_TYPE_QUANTITY:
             case Constants.PARAMETER_TYPE_FUNCTION:

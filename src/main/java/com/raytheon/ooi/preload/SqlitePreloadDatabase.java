@@ -1,7 +1,5 @@
 package com.raytheon.ooi.preload;
 
-import com.raytheon.ooi.driver_control.DriverConfig;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -28,28 +26,28 @@ public class SqlitePreloadDatabase extends PreloadDatabase {
         return INSTANCE;
     }
 
-    public void connect(DriverConfig config) throws Exception {
-        if (!Files.exists(Paths.get(config.getTemp())))
-            Files.createDirectory(Paths.get(config.getTemp()));
-        if (!Files.exists(Paths.get(config.getDatabaseFile())))
-            createDB(config);
+    public void connect() throws Exception {
+        if (!Files.exists(Paths.get(model.getConfig().getTemp())))
+            Files.createDirectory(Paths.get(model.getConfig().getTemp()));
+        if (!Files.exists(Paths.get(model.getConfig().getDatabaseFile())))
+            createDB();
 
-        if (!Files.exists(Paths.get(config.getDatabaseFile())))
+        if (!Files.exists(Paths.get(model.getConfig().getDatabaseFile())))
             throw new SQLException("Database does not exist!");
 
         Class.forName("org.sqlite.JDBC");
-        connection = DriverManager.getConnection("jdbc:sqlite:" + config.getDatabaseFile());
+        connection = DriverManager.getConnection("jdbc:sqlite:" + model.getConfig().getDatabaseFile());
     }
 
-    public void createDB(DriverConfig config) throws IOException, InterruptedException {
+    public void createDB() throws IOException, InterruptedException {
         // do we have parse preload already?  If not, git it
         log.debug("Creating SQLite database with python script");
         String[] args = {};
-        Path preloadDir = Paths.get(config.getTemp(), "parse_preload");
+        Path preloadDir = Paths.get(model.getConfig().getTemp(), "parse_preload");
         Path preloadDb = Paths.get(preloadDir.toString(), "preload.db");
         if (!Files.exists(preloadDb)) {
             log.debug("Getting parse_preload utility with git");
-            Runtime.getRuntime().exec(git, args, Paths.get(config.getTemp()).toFile()).waitFor();
+            Runtime.getRuntime().exec(git, args, Paths.get(model.getConfig().getTemp()).toFile()).waitFor();
         }
         // now run it... user must have already pip installed openpyxl and docopt...
         log.debug("Running preload.py");
@@ -64,6 +62,6 @@ public class SqlitePreloadDatabase extends PreloadDatabase {
 
         log.debug("Return code: {}", p.exitValue());
         log.debug("Moving preload.db to target location");
-        Files.move(preloadDb, Paths.get(config.getDatabaseFile()));
+        Files.move(preloadDb, Paths.get(model.getConfig().getDatabaseFile()));
     }
 }

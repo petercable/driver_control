@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.StringJoiner;
 
 public class DriverConfig {
-    private static Logger log = LogManager.getLogger();
+    private final static Logger log = LogManager.getLogger(DriverConfig.class);
     private JSONObject portAgentConfig;
     private JSONObject startupConfig;
     private String scenario;
@@ -24,7 +24,6 @@ public class DriverConfig {
     private final String commandPortFile = String.join("/", temp, "command_port");
     private final String eventPortFile = String.join("/", temp, "event_port");
     private final String databaseFile = String.join("/", temp, "preload.db");
-
 
     public DriverConfig(File file) throws IOException {
         // open the file, parse the config

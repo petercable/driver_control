@@ -14,7 +14,7 @@ import java.nio.file.Paths;
 import java.util.*;
 
 public class DriverLauncher {
-    private static org.apache.logging.log4j.Logger log = LogManager.getLogger();
+    private static final org.apache.logging.log4j.Logger log = LogManager.getLogger();
 
     private DriverLauncher() {
     }
