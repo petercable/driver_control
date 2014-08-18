@@ -3,6 +3,7 @@ package com.raytheon.ooi.driver_control;
 import com.raytheon.ooi.common.Constants;
 import com.raytheon.ooi.driver_interface.DriverInterface;
 import com.raytheon.ooi.driver_interface.ZmqDriverInterface;
+import com.raytheon.ooi.preload.DataStream;
 import com.raytheon.ooi.preload.PreloadDatabase;
 import com.raytheon.ooi.preload.SqlitePreloadDatabase;
 import javafx.application.Platform;
@@ -102,17 +103,17 @@ public class ControlWindow {
                         sampleTabPane.getTabs().add(tab);
 
                         // create a tableview, add it to the tab
-                        TableView<Map<String, Object>> tableView = new TableView<>(model.sampleLists.get(sample));
+                        TableView<DataStream> tableView = new TableView<>(model.sampleLists.get(sample));
                         tab.setContent(tableView);
 
                         // grab a sample, use it to find the columns and populate
                         // the tableview...
-                        Map<String, Object> oneSample = model.sampleLists.get(sample).get(0);
-                        List<String> keys = new ArrayList<>(oneSample.keySet());
+                        DataStream oneSample = model.sampleLists.get(sample).get(0);
+                        List<String> keys = new ArrayList<>(oneSample.getParams().keySet());
                         Collections.sort(keys);
                         for (String key: keys) {
-                            TableColumn<Map<String, Object>, String> column = new TableColumn<>(key);
-                            column.setCellValueFactory(new MapValueFactory(key));
+                            TableColumn<DataStream, String> column = new TableColumn<>(key);
+                            column.setCellValueFactory();
                             column.setPrefWidth(key.length() * 10);
                             tableView.getColumns().add(column);
                         }

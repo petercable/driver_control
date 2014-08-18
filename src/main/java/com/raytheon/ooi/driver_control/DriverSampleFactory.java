@@ -21,12 +21,9 @@ public class DriverSampleFactory {
     private DriverSampleFactory() {
     }
 
-    public static Map<String, Object> parseSample(String s) {
+    public static DataStream parseSample(String s) {
         Map<String, Object> map = new ConcurrentHashMap<>();
         JSONObject json = (JSONObject) JSONValue.parse(s);
-
-        log.debug(json);
-
         JSONArray json_values = (JSONArray) json.get(Constants.VALUES);
 
         map.put(Constants.STREAM_NAME, json.get(Constants.STREAM_NAME));
@@ -58,7 +55,7 @@ public class DriverSampleFactory {
         stream.archive();
 
         // return the processed data for display
-        return stream.getValues();
+        return stream;
     }
 
 }

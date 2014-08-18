@@ -22,19 +22,21 @@ import java.util.Map;
 import java.util.StringJoiner;
 
 public class DataParameter {
-    private String id;
-    private String name;
-    private String parameterType;
-    private String valueEncoding;
-    private String parameterFunctionId;
-    private String parameterFunctionMap;
+    private final DriverModel model = DriverModel.getInstance();
+    private final PreloadDatabase preload = SqlitePreloadDatabase.getInstance();
+    private final static Logger log = LogManager.getLogger(DataParameter.class);
+
+    public final String id;
+    public final String name;
+    public final String parameterType;
+    public final String valueEncoding;
+    public final String parameterFunctionId;
+    public final String parameterFunctionMap;
+    private final Map<String, String> coefficients = model.getCoefficients();
+
     private Object value;
     private DataStream stream;
     private boolean isDummy = false;
-    private final DriverModel model = DriverModel.getInstance();
-    private static Logger log = LogManager.getLogger(DataParameter.class);
-    private final PreloadDatabase preload = SqlitePreloadDatabase.getInstance();
-    Map<String, String> coefficients = model.getCoefficients();
 
     public DataParameter(String id, String name, String parameterType, String valueEncoding,
                          String parameterFunctionId, String parameterFunctionMap) {
@@ -44,26 +46,6 @@ public class DataParameter {
         this.valueEncoding = valueEncoding;
         this.parameterFunctionId = parameterFunctionId;
         this.parameterFunctionMap = parameterFunctionMap;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public String getParameterType() {
-        return parameterType;
-    }
-
-    public String getValueEncoding() {
-        return valueEncoding;
-    }
-
-    public String getParameterFunctionId() {
-        return parameterFunctionId;
-    }
-
-    public String getParameterFunctionMap() {
-        return parameterFunctionMap;
     }
 
     public boolean getIsDummy() {
@@ -83,10 +65,6 @@ public class DataParameter {
                 valueEncoding,
                 parameterFunctionId,
                 parameterFunctionMap);
-    }
-
-    public String getId() {
-        return id;
     }
 
     public synchronized Object getValue() {
