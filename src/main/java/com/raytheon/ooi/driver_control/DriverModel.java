@@ -1,37 +1,57 @@
 package com.raytheon.ooi.driver_control;
 
+import com.raytheon.ooi.common.Constants;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVRecord;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.json.JSONArray;
-import org.json.JSONObject;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.Reader;
 import java.util.*;
 
 public class DriverModel {
-    private DriverConfig config;
-    private static Logger log = LogManager.getLogger("DriverModel");
+    // static members, including singleton instance
+    private final static DriverModel INSTANCE = new DriverModel();
+    private static Logger log = LogManager.getLogger(DriverModel.class);
 
+    // config is null until loaded
+    private DriverConfig config;
+
+    // coefficient data stored here
+    private final Map<String, String> coefficients = new HashMap<>();
+
+    // storage for commandMetadata, parameterMetadata, samples
     protected final ObservableList<ProtocolCommand> commandList = FXCollections.observableArrayList();
     protected final ObservableList<Parameter> paramList = FXCollections.observableArrayList();
     protected final ObservableList<String> sampleTypes = FXCollections.observableArrayList();
-
     protected Map<String, ObservableList<Map<String, Object>>> sampleLists = new HashMap<>();
-    protected Map<String, ProtocolCommand> commands = new HashMap<>();
-    protected Map<String, Parameter> parameters = new HashMap<>();
+    protected Map<String, ProtocolCommand> commandMetadata = new HashMap<>();
+    protected Map<String, Parameter> parameterMetadata = new HashMap<>();
 
+    // properties to hold protocol state, connection and interface status
     private SimpleStringProperty state = new SimpleStringProperty();
     private SimpleStringProperty status = new SimpleStringProperty();
     private SimpleStringProperty connection = new SimpleStringProperty();
 
+    // are params settable in current state
     private SimpleBooleanProperty paramsSettable = new SimpleBooleanProperty();
 
-    public DriverModel() {
-        log.debug("Created driver model");
+    public static DriverModel getInstance() {
+        return INSTANCE;
+    }
+
+    private DriverModel() {
+
     }
 
     public String maybeString(Object s) {
@@ -45,7 +65,7 @@ public class DriverModel {
     }
 
     public String getString(JSONObject object, String key) {
-        if (object.has(key)) {
+        if (object.containsKey(key)) {
             Object val = object.get(key);
             return maybeString(val);
         }
@@ -53,46 +73,51 @@ public class DriverModel {
     }
 
     public void parseMetadata(JSONObject metadata) {
-        JSONObject _commands = metadata.getJSONObject("commands");
-        JSONObject _parameters = metadata.getJSONObject("parameters");
+        log.debug("parseMetadata: {}", metadata);
+        JSONObject _commands = (JSONObject) metadata.get("commands");
+        JSONObject _parameters = (JSONObject) metadata.get("parameters");
         for (Object _name: _commands.keySet()) {
             String name = (String) _name;
-            String displayName = getString(_commands.getJSONObject(name), "display_name");
+            String displayName = getString((JSONObject)_commands.get(name), "display_name");
             ProtocolCommand command = new ProtocolCommand(name, displayName);
-            commands.put(name, command);
+            commandMetadata.put(name, command);
         }
 
+        // parameters={SampleInterval={set_timeout=10, visibility=READ_WRITE, get_timeout=10, startup=true,
+        // direct_access=false, display_name=Polled Interval, value={default=5, units=s, type=int}}},
         for (Object _name: _parameters.keySet()) {
             String name = (String) _name;
-            JSONObject param = _parameters.getJSONObject(name);
+            JSONObject param = (JSONObject) _parameters.get(name);
             String displayName = getString(param, "display_name");
             String visibility = getString(param, "visibility");
             String description = getString(param, "description");
+            String startup = getString(param, "startup");
+            String directAccess = getString(param, "direct_access");
 
-            JSONObject value = param.getJSONObject("value");
+            JSONObject value = (JSONObject) param.get("value");
             String valueDescription = getString(value, "description");
             String valueType = getString(value, "type");
             String units = getString(value, "units");
-            Parameter paramObj = new Parameter(name, displayName, description, visibility,
+            Parameter paramObj = new Parameter(name, displayName, description, visibility, startup, directAccess,
                     valueDescription, valueType, units);
-            parameters.put(name, paramObj);
-            paramList.add(paramObj);
+            parameterMetadata.put(name, paramObj);
         }
-        log.debug(commands);
-        log.debug(parameters);
+        log.debug("Parsed metadata: commands = {}", commandMetadata);
+        log.debug("Parsed metadata: parameters = {}", parameterMetadata);
     }
 
     public void parseCapabilities(JSONArray capes) {
         log.debug("parse capabilities, clearing commandList");
         commandList.clear();
         setParamsSettable(false);
-        for (int i=0; i<capes.length(); i++) {
-            String capability = capes.getString(i);
+        for (Object cape : capes) {
+            log.debug("CAPABILITY: {}", cape);
+            String capability = (String) cape;
             log.debug("Found capability: " + capability);
-            ProtocolCommand command = commands.get(capability);
-            if (command==null) {
+            ProtocolCommand command = commandMetadata.get(capability);
+            if (command == null) {
                 command = new ProtocolCommand(capability, "");
-                commands.put(capability, command);
+                commandMetadata.put(capability, command);
             }
             if (command.getName().equals("DRIVER_EVENT_GET")) continue;
             if (command.getName().equals("DRIVER_EVENT_SET")) {
@@ -119,17 +144,21 @@ public class DriverModel {
     }
 
     public void setParams(JSONObject params) {
+        // TODO handle incomplete parameter lists?
+        log.debug("setParams, clearing parameterList");
+        paramList.clear();
         if (params != null) {
             for (Object key : params.keySet()) {
                 String name = (String) key;
                 String value = getString(params, name);
                 if (name != null) {
-                    Parameter param = parameters.get(name);
+                    Parameter param = parameterMetadata.get(name);
                     if (param != null) {
                         if (!Objects.equals(param.getValue(), value)) {
                             log.debug("UPDATED PARAM: " + name + " VALUE: " + value);
                             param.setValue(value);
                         }
+                        paramList.add(param);
                     }
                 }
             }
@@ -137,7 +166,7 @@ public class DriverModel {
     }
 
     protected void publishSample(Map<String, Object> sample) {
-        String streamName = (String) sample.get(DriverSampleFactory.STREAM_NAME);
+        String streamName = (String) sample.get(Constants.STREAM_NAME);
         Platform.runLater(()->{
             if (!sampleLists.containsKey(streamName)) {
                 sampleLists.put(streamName, FXCollections.observableArrayList(new ArrayList<Map<String, Object>>()));
@@ -152,6 +181,27 @@ public class DriverModel {
         });
     }
 
+    public Map<String, String> getCoefficients() {
+        return coefficients;
+    }
+
+    public void updateCoefficients(Map<String, String> coefficients) {
+        this.coefficients.putAll(coefficients);
+    }
+
+    public void updateCoefficients(File file) throws IOException {
+        Reader in = new FileReader(file);
+        Iterable<CSVRecord> records = CSVFormat.EXCEL.parse(in);
+        for (CSVRecord record: records) {
+            try {
+                String name = record.get(1);
+                String value = record.get(2);
+                log.debug("Found coefficient {} : {}", name, value);
+                coefficients.put(name, value);
+            } catch (ArrayIndexOutOfBoundsException ignore) { }
+        }
+    }
+
     public boolean getParamsSettable() {
         return paramsSettable.get();
     }
@@ -162,14 +212,6 @@ public class DriverModel {
 
     public SimpleBooleanProperty getParamsSettableProperty() {
         return paramsSettable;
-    }
-
-    public void setConfig(DriverConfig config) {
-        this.config = config;
-    }
-
-    public DriverConfig getConfig() {
-        return config;
     }
 
     public String getStatus() {
@@ -194,5 +236,13 @@ public class DriverModel {
 
     public SimpleStringProperty getConnectionProperty() {
         return connection;
+    }
+
+    public DriverConfig getConfig() {
+        return config;
+    }
+
+    public void setConfig(DriverConfig config) {
+        this.config = config;
     }
 }

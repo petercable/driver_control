@@ -32,7 +32,7 @@ public class Main extends Application {
                 File path = Paths.get(parameters.getNamed().get("config")).toFile();
                 controlWindow.loadConfig(path);
             }
-            log.debug("parameters: {}", parameters.getNamed());
+            log.debug("parameterMetadata: {}", parameters.getNamed());
         }
         catch (Exception e) {
             e.printStackTrace();
@@ -41,12 +41,12 @@ public class Main extends Application {
     }
 
     public void stop() {
-        if (controlWindow.listener != null)
-            controlWindow.listener.shutdown();
         if (controlWindow.driverProcess != null) {
             controlWindow.shutdownDriver();
             controlWindow.driverProcess.destroy();
         }
+        if (controlWindow.driverInterface != null)
+            controlWindow.driverInterface.shutdown();
         System.exit(0);
     }
 

@@ -1,12 +1,14 @@
 package com.raytheon.ooi.driver_control;
 
+import com.raytheon.ooi.common.Constants;
+import com.raytheon.ooi.driver_interface.DriverInterface;
+import com.raytheon.ooi.driver_interface.ZmqDriverInterface;
 import com.raytheon.ooi.preload.PreloadDatabase;
-import com.raytheon.ooi.preload.SqliteConnectionFactory;
+import com.raytheon.ooi.preload.SqlitePreloadDatabase;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.ListChangeListener;
-import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -20,19 +22,16 @@ import javafx.scene.layout.AnchorPane;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.controlsfx.control.action.Action;
 import org.controlsfx.dialog.Dialog;
 import org.controlsfx.dialog.Dialogs;
-import org.json.JSONObject;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.sql.SQLException;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
 
 public class ControlWindow {
     @FXML AnchorPane root;
@@ -42,7 +41,12 @@ public class ControlWindow {
     @FXML private TableColumn<ProtocolCommand, String> commandNameColumn;
     @FXML private TableColumn<Parameter, String> parameterNameColumn;
     @FXML private TableColumn<Parameter, String> parameterValueColumn;
+    @FXML private TableColumn<Parameter, String> parameterUnitsColumn;
     @FXML private TableColumn<Parameter, String> parameterNewValueColumn;
+    @FXML private TableColumn<Parameter, String> parameterValueDescriptionColumn;
+    @FXML private TableColumn<Parameter, String> parameterVisibility;
+    @FXML private TableColumn<Parameter, String> parameterStartup;
+    @FXML private TableColumn<Parameter, String> parameterDirectAccess;
     @FXML private TextField stateField;
     @FXML private TextField statusField;
     @FXML private TextField connectionStatusField;
@@ -50,12 +54,13 @@ public class ControlWindow {
     @FXML private TabPane tabPane;
 
     private TabPane sampleTabPane;
-    private DriverModel model = new DriverModel();
-    protected DriverControl controller;
-    protected EventListener listener;
-    private PreloadDatabase preload;
-    private static org.apache.logging.log4j.Logger log = LogManager.getLogger();
+    private static final Logger log = LogManager.getLogger(ControlWindow.class);
     protected Process driverProcess = null;
+    protected DriverInterface driverInterface = null;
+
+    private final DriverModel model = DriverModel.getInstance();
+    private final PreloadDatabase preload = SqlitePreloadDatabase.getInstance();
+    private final DriverEventHandler eventHandler = new DriverEventHandler();
 
     private ChangeListener<Boolean> settableListener = new ChangeListener<Boolean>() {
         @Override
@@ -74,6 +79,7 @@ public class ControlWindow {
         }
     };
 
+    @SuppressWarnings("unchecked")
     private ListChangeListener<String> sampleChangeListener = new ListChangeListener<String>() {
         @Override
         public void onChanged(final Change<? extends String> change) {
@@ -118,14 +124,17 @@ public class ControlWindow {
 
     @FXML
     private void initialize() {
-
-
         commandColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
         commandNameColumn.setCellValueFactory(new PropertyValueFactory<>("displayName"));
 
         parameterNameColumn.setCellValueFactory(new PropertyValueFactory<>("displayName"));
         parameterValueColumn.setCellValueFactory(new PropertyValueFactory<>("value"));
+        parameterUnitsColumn.setCellValueFactory(new PropertyValueFactory<>("units"));
         parameterNewValueColumn.setCellValueFactory(new PropertyValueFactory<>("newValue"));
+        parameterValueDescriptionColumn.setCellValueFactory(new PropertyValueFactory<>("valueDescription"));
+        parameterVisibility.setCellValueFactory(new PropertyValueFactory<>("visibility"));
+        parameterStartup.setCellValueFactory(new PropertyValueFactory<>("startup"));
+        parameterDirectAccess.setCellValueFactory(new PropertyValueFactory<>("directAccess"));
         parameterNewValueColumn.setCellFactory(TextFieldTableCell.<Parameter>forTableColumn());
 
         parameterNewValueColumn.setOnEditCommit(
@@ -143,20 +152,18 @@ public class ControlWindow {
         this.model.getConnectionProperty().addListener(connectionChangeListener);
     }
 
-    private int getPort(String filename) throws Exception {
-        Path path = Paths.get(filename);
-        String contents = new String(Files.readAllBytes(path));
-        return Integer.parseInt(contents.trim());
-    }
-
     public void selectCommand(MouseEvent event) {
         if (! checkController()) return;
             TableView source = (TableView) event.getSource();
             int row = source.getSelectionModel().getSelectedIndex();
             if (row != -1) {
                 ProtocolCommand command = model.commandList.get(row);
-                log.debug("Clicked: " + command);
-                controller.execute(command.getName());
+                log.debug("Clicked: {}, {}", command, command.getName());
+                model.commandList.clear();
+                new Thread(()-> {
+                    driverInterface.execute(command.getName());
+                    Platform.runLater(this::getCapabilities);
+                }).start();
             }
     }
 
@@ -164,7 +171,7 @@ public class ControlWindow {
         if (! checkController()) return;
         log.debug("clicked send params");
         Map<String, Object> values = new HashMap<>();
-        for (Parameter p: model.parameters.values()) {
+        for (Parameter p: model.parameterMetadata.values()) {
             Object sendValue;
             String newValue = p.getNewValue();
             String oldValue = p.getValue();
@@ -184,10 +191,10 @@ public class ControlWindow {
             }
             values.put(p.getName(), sendValue);
         }
-        for (Parameter p: model.parameters.values()) {
+        for (Parameter p: model.parameterMetadata.values()) {
             p.setNewValue("");
         }
-        controller.setResource(new JSONObject(values).toString());
+        driverInterface.setResource(new JSONObject(values).toString());
     }
 
     public void loadConfig() {
@@ -200,10 +207,8 @@ public class ControlWindow {
     public void loadConfig(File file) {
         log.debug("loading configuration from file: {}", file);
         if (file != null) {
-            DriverConfig config;
-
             try {
-                config = new DriverConfig(file);
+                model.setConfig(new DriverConfig(file));
             } catch (IOException e) {
                 Dialogs.create()
                         .owner(null)
@@ -213,10 +218,9 @@ public class ControlWindow {
                 return;
             }
 
-            model.setConfig(config);
             try {
-                preload = new PreloadDatabase(SqliteConnectionFactory.getConnection(config));
-            } catch (SQLException | ClassNotFoundException | IOException | InterruptedException e) {
+                preload.connect();
+            } catch (Exception e) {
                 Dialogs.create()
                         .owner(null)
                         .title("Preload Database")
@@ -239,7 +243,7 @@ public class ControlWindow {
         log.debug("loading coefficients from file: {}", file);
         if (file != null) {
             try {
-                model.getConfig().setCoefficients(file);
+                model.updateCoefficients(file);
             } catch (IOException e) {
                 Dialogs.create()
                         .owner(null)
@@ -250,9 +254,8 @@ public class ControlWindow {
         }
     }
 
-    public DriverConfig getConfig() {
-        DriverConfig config = model.getConfig();
-        if (config == null) {
+    public void getConfig() {
+        if (model.getConfig() == null) {
             Action response = Dialogs.create()
                     .owner(null)
                     .title("Test Configuration")
@@ -263,7 +266,6 @@ public class ControlWindow {
                 this.loadConfig();
             }
         }
-        return model.getConfig();
     }
 
 
@@ -272,49 +274,47 @@ public class ControlWindow {
             shutdownDriver();
             driverProcess.destroy();
         }
-        driverProcess = DriverLauncher.launchDriver(model.getConfig(), preload);
+        driverProcess = DriverLauncher.launchDriver(model.getConfig());
     }
 
-    public void zmqConnect() {
+    public void driverConnect() {
         // create model and controllers
-        DriverConfig config = this.getConfig();
         model.setStatus("Connecting to driver...");
         try {
-            String host = config.getHost();
-            int eventPort = getPort(config.getEventPortFile());
-            int commandPort = getPort(config.getCommandPortFile());
-            controller = new DriverControl(host, commandPort, model);
-            listener = new EventListener(host, eventPort, model, controller, preload, config);
-            listener.start();
-            controller.getProtocolState().get();
-            controller.getMetadata().get();
+            driverInterface = new ZmqDriverInterface(
+                    model.getConfig().getHost(),
+                    model.getConfig().getCommandPort(),
+                    model.getConfig().getEventPort());
+            driverInterface.addObserver(eventHandler);
             model.setStatus("Connecting to driver...complete");
         } catch (Exception e) {
             e.printStackTrace();
-            Action response = Dialogs.create()
+            Dialogs.create()
                     .owner(null)
                     .title("Driver Protocol Connection Exception")
-                    .masthead("Exception occurred when attempting to connect to the protocol driver.")
-                    .message("Unable to connect to driver. Would you like to launch the driver now?")
-                    .actions(Dialog.Actions.YES, Dialog.Actions.NO)
-                    .showConfirm();
-            if (response == Dialog.Actions.YES) {
-                try {
-                    this.launchDriver();
-                } catch (IOException | InterruptedException e1) {
-                    Dialogs.create()
-                            .owner(null)
-                            .title("Launch Driver")
-                            .message("Exception occurred launching driver.")
-                            .showException(e);
-                }
-            }
+                    .message("Exception occurred when attempting to connect to the protocol driver.")
+                    .showException(e);
             model.setStatus("Connecting to driver...failed");
+            return;
+        }
+        getMetadata();
+        updateProtocolState();
+        switch (model.getState()) {
+            case Constants.DRIVER_STATE_UNCONFIGURED:
+                configure();
+            case Constants.DRIVER_STATE_DISCONNECTED:
+                connect();
+            case Constants.DRIVER_STATE_UNKNOWN:
+                discover();
+            default:
+                getParams();
+                updateProtocolState();
+                break;
         }
     }
 
     private boolean checkController() {
-        if (controller == null) {
+        if (driverInterface == null) {
             Action response = Dialogs.create()
                     .owner(null)
                     .title("")
@@ -322,143 +322,87 @@ public class ControlWindow {
                     .actions(Dialog.Actions.YES, Dialog.Actions.NO)
                     .showConfirm();
             if (response == Dialog.Actions.YES) {
-                this.zmqConnect();
+                this.driverConnect();
             }
         }
-        return (controller != null);
+        return (driverInterface != null && driverInterface.isConnected());
+    }
+
+    private void updateProtocolState() {
+        model.setState(driverInterface.getProtocolState());
+        log.debug("Protocol state in model set to: {}", model.getStatus());
     }
 
     public void configure() {
-        if (! checkController()) return;
-        try {
-            controller.getProtocolState().get();
-            String state = model.getState();
-            if (Objects.equals(state, "DRIVER_STATE_UNCONFIGURED")) {
-                model.setStatus("Configuring driver...");
-                controller.configure().get();
-                controller.init().get();
-                model.setStatus("Configuration complete.");
-            }
-            else {
-                model.setStatus("Configuration already complete.");
-            }
-        } catch (InterruptedException | ExecutionException e) {
-            e.printStackTrace();
+    if (! checkController()) return;
+        updateProtocolState();
+        String status;
+        if (Objects.equals(model.getState(), Constants.DRIVER_STATE_UNCONFIGURED)) {
+            model.setStatus("Configuring driver...");
+            driverInterface.configurePortAgent(model.getConfig().getPortAgentConfig());
+            driverInterface.initParams(model.getConfig().getStartupConfig());
+            status = "Configuration complete.";
+            updateProtocolState();
         }
+        else {
+            status = "Configuration already complete.";
+        }
+        model.setStatus(status);
+        log.debug(status);
     }
 
     public void connect() {
         if (! checkController()) return;
-        try {
-            controller.getProtocolState().get();
-            String state = model.getState();
-            if (Objects.equals(state, "DRIVER_STATE_DISCONNECTED")) {
-                model.setStatus("Connecting to instrument...");
-                controller.connect().get();
-                model.setStatus("Connecting to instrument...done");
-            }
-        } catch (InterruptedException | ExecutionException e) {
-            e.printStackTrace();
+        updateProtocolState();
+        if (Objects.equals(model.getState(), Constants.DRIVER_STATE_DISCONNECTED)) {
+            model.setStatus("Connecting to instrument...");
+            driverInterface.connect();
+            model.setStatus("Connecting to instrument...done");
+            updateProtocolState();
         }
     }
 
     public void getCapabilities() {
         if (! checkController()) return;
         model.setStatus("Getting capabilities...");
-        controller.getCapabilities();  // immediate action
+        JSONArray capabilities = driverInterface.getCapabilities();
+        model.parseCapabilities((JSONArray) capabilities.get(0));
     }
 
     public void getState() {
         if (! checkController()) return;
         model.setStatus("Getting protocol state...");
-        controller.getProtocolState();  // immediate action
+        updateProtocolState();
     }
 
     public void getParams() {
         if (! checkController()) return;
-        model.setStatus("Getting parameters...");
-        controller.getResource("DRIVER_PARAMETER_ALL");
+        model.setStatus("Getting parameterMetadata...");
+        model.setParams((JSONObject) driverInterface.getResource("DRIVER_PARAMETER_ALL"));
+    }
+
+    public void getMetadata() {
+        if (! checkController()) return;
+        model.setStatus("Getting metadata...");
+        JSONObject metadata = driverInterface.getMetadata();
+        model.parseMetadata(metadata);
     }
 
     public void discover() {
-        if (! checkController()) return;
-        try {
-            controller.getProtocolState().get();
-            String state = model.getState();
-            if (Objects.equals(state, "DRIVER_STATE_UNKNOWN")) {
-                model.setStatus("Discovering protocol state...");
-                controller.discover();
-                model.setStatus("Discovering protocol state...done");
-            }
-        } catch (InterruptedException | ExecutionException e) {
-            e.printStackTrace();
+        updateProtocolState();
+        if (Objects.equals(model.getState(), Constants.DRIVER_STATE_UNKNOWN)) {
+            model.setStatus("Discovering protocol state...");
+            driverInterface.discoverState();
+            model.setStatus("Discovering protocol state...done");
+            updateProtocolState();
+            getCapabilities();
         }
     }
 
     public void shutdownDriver() {
         if (! checkController()) return;
-        controller.stop();
-    }
-
-    public void validateStreams() {
-
-        Map<String, DataStream> map = preload.getStreams(model.getConfig().getScenario());
-        map.entrySet().forEach(System.out::println);
-        map.keySet().stream().filter(model.sampleLists::containsKey).forEach(key -> {
-            ObservableList<Map<String, Object>> samples = model.sampleLists.get(key);
-            Map sample = samples.get(0);
-            DataStream ds = map.get(key);
-            log.debug("going to compare {} to {}", sample, ds);
-            for (String paramName : ds.getParams().keySet()) {
-                DataParameter parameter = ds.getParams().get(paramName);
-                if (!sample.containsKey(paramName))
-                    log.error("MISSING PARAMETER FROM STREAM: {}", paramName);
-                else {
-                    Object value = sample.get(paramName);
-                    log.debug("Testing {} value: {}", paramName, value);
-                    if (parameter.getParameterType().equals("quantity")) {
-                        switch (parameter.getValueEncoding()) {
-                            case "int32":
-                                if (!(value instanceof Integer)) {
-                                    log.error("Non integral value found in Integer field");
-                                    break;
-                                }
-                                if ((Integer) value > Integer.MAX_VALUE)
-                                    log.error("Oversized (>int32) integral value found in Integer field");
-                            case "int16":
-                                if ((Integer) value > Short.MAX_VALUE)
-                                    log.error("Oversized (>int16) integral value found in Integer field");
-                            case "int8":
-                                if ((Integer) value > Byte.MAX_VALUE)
-                                    log.error("Oversized (>int8) integral value found in Integer field");
-                                break;
-                            case "float64":
-                                if (!(value instanceof Double)) {
-                                    if (value instanceof Integer) {
-                                        value = ((Integer) value).doubleValue();
-                                    } else {
-                                        log.error("Non floating point value found in FP field");
-                                        break;
-                                    }
-                                }
-                                if ((Double) value > Double.MAX_VALUE)
-                                    log.error("Oversized FP (double) value found in FP field");
-                            case "float32":
-                                if ((Double) value > Float.MAX_VALUE)
-                                    log.error("Oversized FP (float) value found in FP field");
-                                break;
-                            case "str":
-                                break;
-                            default:
-                                log.error("UNHANDLED VALUE ENCODING {} {}", paramName, parameter.getValueEncoding());
-                                break;
-                        }
-                    } else {
-                        log.debug("Non-quantity field [{}] not checked (type={})", paramName, parameter.getParameterType());
-                    }
-                }
-            }
-        });
+        driverInterface.stopDriver();
+        driverInterface.shutdown();
     }
 
     public void displayTestProcedures() {

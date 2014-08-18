@@ -26,6 +26,7 @@
                                 <MenuItem onAction="#discover" text="Discover" />
                                 <MenuItem onAction="#shutdownDriver" text="Shutdown" />
                                 <SeparatorMenuItem />
+                                <MenuItem onAction="#getMetadata" text="Get Metadata" />
                                 <MenuItem onAction="#getCapabilities" text="Get Capabilities" />
                                 <MenuItem onAction="#getState" text="Get State" />
                                 <MenuItem onAction="#getParams" text="Get Parameters" />
@@ -34,9 +35,9 @@
                         <Menu text="Test">
                             <items>
                                 <MenuItem onAction="#launchDriver" text="Launch Driver" />
-                                <MenuItem onAction="#zmqConnect" text="Connect to Driver" />
+                                <MenuItem onAction="#driverConnect" text="Connect to Driver" />
                                 <SeparatorMenuItem />
-                                <MenuItem onAction="#validateStreams" text="Validate Streams" />
+                                <!--<MenuItem onAction="#validateStreams" text="Validate Streams" />-->
                             </items>
                         </Menu>
                         <Menu text="Help">
@@ -65,8 +66,13 @@
                                         <TableView fx:id="parameterTable" editable="true" layoutX="14.0" layoutY="14.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" VBox.vgrow="ALWAYS">
                                             <columns>
                                                 <TableColumn fx:id="parameterNameColumn" editable="false" minWidth="200.0" prefWidth="-1.0" text="Parameter" />
-                                                <TableColumn fx:id="parameterValueColumn" minWidth="20.0" prefWidth="150.0" text="Value" />
-                                                <TableColumn fx:id="parameterNewValueColumn" minWidth="20.0" prefWidth="150.0" text="New Value" />
+                                                <TableColumn fx:id="parameterValueColumn" minWidth="20.0" prefWidth="50.0" text="Value" />
+                                                <TableColumn fx:id="parameterUnitsColumn" minWidth="20.0" prefWidth="50.0" text="Units" />
+                                                <TableColumn fx:id="parameterNewValueColumn" minWidth="20.0" prefWidth="50.0" text="New Value" />
+                                                <TableColumn fx:id="parameterValueDescriptionColumn" minWidth="20.0" prefWidth="150.0" text="Value Description" />
+                                                <TableColumn fx:id="parameterVisibility" minWidth="20.0" prefWidth="150.0" text="Value Visibility" />
+                                                <TableColumn fx:id="parameterStartup" minWidth="20.0" prefWidth="150.0" text="Startup" />
+                                                <TableColumn fx:id="parameterDirectAccess" minWidth="20.0" prefWidth="150.0" text="Direct Access" />
                                             </columns>
                                         </TableView>
                                         <HBox alignment="TOP_RIGHT" VBox.vgrow="NEVER">
