@@ -32,7 +32,9 @@ public class ZmqDriverInterface extends DriverInterface {
         eventSocket.subscribe(new byte[0]);
         
         log.debug("Connected, starting event loop");
-        new Thread(this::eventLoop).start();
+        Thread t = new Thread(this::eventLoop);
+        t.setName("Event Loop");
+        t.start();
         connected = true;
     }
 

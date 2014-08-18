@@ -1,6 +1,6 @@
 package com.raytheon.ooi.driver_control;
 
-import com.raytheon.ooi.common.Constants;
+import com.raytheon.ooi.preload.DataStream;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -35,7 +35,7 @@ public class DriverModel {
     protected final ObservableList<ProtocolCommand> commandList = FXCollections.observableArrayList();
     protected final ObservableList<Parameter> paramList = FXCollections.observableArrayList();
     protected final ObservableList<String> sampleTypes = FXCollections.observableArrayList();
-    protected Map<String, ObservableList<Map<String, Object>>> sampleLists = new HashMap<>();
+    protected Map<String, ObservableList<DataStream>> sampleLists = new HashMap<>();
     protected Map<String, ProtocolCommand> commandMetadata = new HashMap<>();
     protected Map<String, Parameter> parameterMetadata = new HashMap<>();
 
@@ -166,15 +166,14 @@ public class DriverModel {
         }
     }
 
-    protected void publishSample(Map<String, Object> sample) {
-        String streamName = (String) sample.get(Constants.STREAM_NAME);
+    protected void publishSample(DataStream sample) {
         Platform.runLater(()->{
-            if (!sampleLists.containsKey(streamName)) {
-                sampleLists.put(streamName, FXCollections.observableArrayList(new ArrayList<Map<String, Object>>()));
-                sampleTypes.add(streamName);
+            if (!sampleLists.containsKey(sample.name)) {
+                sampleLists.put(sample.name, FXCollections.observableArrayList(new ArrayList<>()));
+                sampleTypes.add(sample.name);
             }
             try {
-                List<Map<String, Object>> samples = sampleLists.get(streamName);
+                List<DataStream> samples = sampleLists.get(sample.name);
                 if (samples != null) samples.add(sample);
             } catch (Exception e) {
                 e.printStackTrace();

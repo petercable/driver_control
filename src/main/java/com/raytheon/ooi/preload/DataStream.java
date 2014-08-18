@@ -1,5 +1,6 @@
 package com.raytheon.ooi.preload;
 
+import com.raytheon.ooi.common.Constants;
 import com.raytheon.ooi.driver_control.DriverModel;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -15,18 +16,14 @@ import static java.nio.file.StandardOpenOption.APPEND;
 import static java.nio.file.StandardOpenOption.CREATE;
 
 public class DataStream {
-    private final String name;
+    public final String name;
     private final DriverModel model = DriverModel.getInstance();
     private final Map<String, DataParameter> params = new HashMap<>();
-    private final Map<String, Object> metadata = new HashMap<>();
+//    private final Map<String, Object> metadata = new HashMap<>();
     private final static Logger log = LogManager.getLogger(DataStream.class);
 
     public DataStream(String name) {
         this.name = name;
-    }
-
-    public String getName() {
-        return name;
     }
 
     public Map<String, DataParameter> getParams() {
@@ -43,7 +40,21 @@ public class DataStream {
             if (params.containsKey(name)) {
                 params.get(name).setValue(values.get(name));
             } else {
-                metadata.put(name, values.get(name));
+                switch (name) {
+                    case Constants.STREAM_NAME:
+                    case Constants.PKT_FORMAT_ID:
+                    case Constants.PKT_VERSION:
+                    case Constants.QUALITY_FLAG:
+                    case Constants.PREFERRED_TIMESTAMP:
+                        break;
+                    default:
+                        DataParameter dp = new DataParameter("", name, "bogus", "", "", "");
+                        dp.setValue(values.get(name));
+                        dp.setMissing(true);
+                        params.put(name, dp);
+                        log.error("Parameter in stream not present in preload stream definition! {}:{}", name, values.get(name));
+                        break;
+                }
             }
         }
     }
@@ -57,18 +68,22 @@ public class DataStream {
         return params.get(paramName).getValue();
     }
 
+    public DataParameter getParam(String paramName) {
+        return params.get(paramName);
+    }
+
     public Map<String, Object> getValues() {
         Map<String, Object> values = new HashMap<>();
         for (String key: params.keySet())
             values.put(key, params.get(key).getValue());
 
-        for (String key: metadata.keySet())
-            values.put(key, metadata.get(key));
+//        for (String key: metadata.keySet())
+//            values.put(key, metadata.get(key));
         return values;
     }
 
     public void validate() {
-        params.values().stream().forEach(DataParameter::validate);
+        params.values().parallelStream().forEach(DataParameter::validate);
     }
 
     public void archive() {

@@ -98,6 +98,7 @@ public class DriverLauncher {
           assumes we are already in the directory containing the egg to be patched */
         log.debug("Patching zmq_driver to use JSON");
         String[] commands = {
+            String.format("sed -i .bak s/INFO/DEBUG/g %s/res/config/mi-logging.yml", scenarioPath),
             String.format("cp %s/res/config/mi-logging.yml %s/mi/mi-logging.yml", scenarioPath, scenarioPath)
         };
         for (String command: commands) {
