@@ -45,8 +45,13 @@ public class DataStream {
                     case Constants.PKT_FORMAT_ID:
                     case Constants.PKT_VERSION:
                     case Constants.QUALITY_FLAG:
+                    case Constants.PREFERRED_TIMESTAMP:
                         break;
                     default:
+                        DataParameter dp = new DataParameter("", name, "bogus", "", "", "");
+                        dp.setValue(values.get(name));
+                        dp.setMissing(true);
+                        params.put(name, dp);
                         log.error("Parameter in stream not present in preload stream definition! {}:{}", name, values.get(name));
                         break;
                 }
@@ -63,6 +68,10 @@ public class DataStream {
         return params.get(paramName).getValue();
     }
 
+    public DataParameter getParam(String paramName) {
+        return params.get(paramName);
+    }
+
     public Map<String, Object> getValues() {
         Map<String, Object> values = new HashMap<>();
         for (String key: params.keySet())
@@ -74,7 +83,7 @@ public class DataStream {
     }
 
     public void validate() {
-        params.values().stream().forEach(DataParameter::validate);
+        params.values().parallelStream().forEach(DataParameter::validate);
     }
 
     public void archive() {

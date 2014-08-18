@@ -3,10 +3,12 @@ package com.raytheon.ooi.driver_control;
 import com.raytheon.ooi.common.Constants;
 import com.raytheon.ooi.driver_interface.DriverInterface;
 import com.raytheon.ooi.driver_interface.ZmqDriverInterface;
+import com.raytheon.ooi.preload.DataParameter;
 import com.raytheon.ooi.preload.DataStream;
 import com.raytheon.ooi.preload.PreloadDatabase;
 import com.raytheon.ooi.preload.SqlitePreloadDatabase;
 import javafx.application.Platform;
+import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.ListChangeListener;
@@ -15,11 +17,11 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.control.cell.MapValueFactory;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.apache.logging.log4j.LogManager;
@@ -94,6 +96,7 @@ public class ControlWindow {
                             Tab rootSampleDataTab = new Tab("Sample Data");
                             tabPane.getTabs().add(rootSampleDataTab);
                             sampleTabPane = new TabPane();
+                            sampleTabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
                             rootSampleDataTab.setContent(sampleTabPane);
                         }
 
@@ -112,10 +115,52 @@ public class ControlWindow {
                         List<String> keys = new ArrayList<>(oneSample.getParams().keySet());
                         Collections.sort(keys);
                         for (String key: keys) {
-                            TableColumn<DataStream, String> column = new TableColumn<>(key);
-                            column.setCellValueFactory();
+                            TableColumn<DataStream, DataParameter> column = new TableColumn<>(key);
+                            column.setCellValueFactory((s)-> new ReadOnlyObjectWrapper<>(s.getValue().getParam(key)));
                             column.setPrefWidth(key.length() * 10);
                             tableView.getColumns().add(column);
+
+                            column.setCellFactory(c -> {
+                                return new TableCell<DataStream, DataParameter>() {
+                                    @Override
+                                    protected void updateItem(DataParameter item, boolean empty) {
+                                        super.updateItem(item, empty);
+
+                                        if (item == null || empty) {
+                                            setText(null);
+                                            setStyle("");
+                                        } else {
+                                            Object value = item.getValue();
+                                            if (value == null) {
+                                                setText("not present");
+                                                setTextFill(Color.CHOCOLATE);
+                                            } else {
+                                                setText(item.getValue().toString());
+                                                setTextFill(Color.BLACK);
+                                                // parameter in instrument stream, not in preload
+                                                if (item.isMissing()) {
+                                                    setStyle("-fx-background-color: lightgreen");
+                                                // function, missing input value
+                                                } else if (item.getIsDummy()) {
+                                                    setStyle("-fx-background-color: yellow");
+                                                // function, calculated value
+                                                } else if (item.parameterType.equals(Constants.PARAMETER_TYPE_FUNCTION)) {
+                                                    if (item.isFailedValidate())
+                                                        setStyle("-fx-background-color: orange");
+                                                    else
+                                                        setStyle("-fx-background-color: lightblue");
+                                                // raw input, out of range
+                                                } else if (item.isFailedValidate()) {
+                                                    setStyle("-fx-background-color: orangered");
+                                                } else {
+                                                    setTextFill(Color.BLACK);
+                                                    setStyle("");
+                                                }
+                                            }
+                                        }
+                                    }
+                                };
+                            });
                         }
                     }
                 }

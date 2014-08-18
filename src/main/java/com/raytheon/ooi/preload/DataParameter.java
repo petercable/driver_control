@@ -37,6 +37,8 @@ public class DataParameter {
     private Object value;
     private DataStream stream;
     private boolean isDummy = false;
+    private boolean failedValidate = false;
+    private boolean missing = false;
 
     public DataParameter(String id, String name, String parameterType, String valueEncoding,
                          String parameterFunctionId, String parameterFunctionMap) {
@@ -223,82 +225,95 @@ public class DataParameter {
         }
     }
         
-    public boolean validateType(Object thisValue) {
-        try{
-            if (thisValue == null) return false;
-            Long longValue;
-            Double doubleValue;
-            boolean badLong = false;
-            if (thisValue instanceof Integer) {
-                longValue = ((Integer) thisValue).longValue();
-                doubleValue = ((Integer) thisValue).doubleValue();
-            } else if (thisValue instanceof Long) {
-                longValue = (Long) thisValue;
-                doubleValue = ((Long) thisValue).doubleValue();
-            } else if (thisValue instanceof Double) {
-                doubleValue = (Double) thisValue;
-                longValue = 0l;
-                badLong = true;
-            } else {
-                log.debug("Non-numeric type for this parameter: {}", this.toString());
-                return true;
-            }
-
-            switch (valueEncoding) {
-                // INTS
-                case Constants.VALUE_TYPE_INT8:
-                    if (longValue > Byte.MAX_VALUE || longValue < Byte.MIN_VALUE || badLong)
-                        log.error("VALUE OVERFLOW: value {} found in {} parameter {}", thisValue, valueEncoding, name);
-                    break;
-                case Constants.VALUE_TYPE_INT16:
-                    if (longValue > Short.MAX_VALUE || longValue < Short.MIN_VALUE || badLong)
-                        log.error("VALUE OVERFLOW: value {} found in {} parameter {}", thisValue, valueEncoding, name);
-                    break;
-                case Constants.VALUE_TYPE_INT32:
-                    if (longValue > Integer.MAX_VALUE || longValue < Integer.MIN_VALUE || badLong)
-                        log.error("VALUE OVERFLOW: value {} found in {} parameter {}", thisValue, valueEncoding, name);
-                    break;
-                case Constants.VALUE_TYPE_INT64:
-                    if (longValue > Long.MAX_VALUE || longValue < Long.MIN_VALUE || badLong)
-                        log.error("VALUE OVERFLOW: value {} found in {} parameter {}", thisValue, valueEncoding, name);
-                    break;
-                // FLOATS
-                case Constants.VALUE_TYPE_FLOAT32:
-                    if (doubleValue > Float.MAX_VALUE || doubleValue < -Float.MAX_VALUE)
-                        log.error("VALUE OVERFLOW: value {} found in {} parameter {}", thisValue, valueEncoding, name);
-                    break;
-                case Constants.VALUE_TYPE_FLOAT64:
-                    if (doubleValue > Double.MAX_VALUE || doubleValue < -Double.MAX_VALUE)
-                        log.error("VALUE OVERFLOW: value {} found in {} parameter {}", thisValue, valueEncoding, name);
-                    break;
-                // UINTS
-                case Constants.VALUE_TYPE_UINT8:
-                    if (longValue > (Byte.MAX_VALUE*2) || longValue < (Byte.MIN_VALUE*2) || badLong)
-                        log.error("VALUE OVERFLOW: value {} found in {} parameter {}", thisValue, valueEncoding, name);
-                    break;
-                case Constants.VALUE_TYPE_UINT16:
-                    if (longValue > (Short.MAX_VALUE*2) || longValue < (Short.MIN_VALUE*2) || badLong)
-                        log.error("VALUE OVERFLOW: value {} found in {} parameter {}", thisValue, valueEncoding, name);
-                    break;
-                case Constants.VALUE_TYPE_UINT32:
-                    if (longValue > (Long.MAX_VALUE) || longValue < Long.MIN_VALUE || badLong)
-                        log.error("VALUE OVERFLOW: value {} found in {} parameter {}", thisValue, valueEncoding, name);
-                    break;
-                case Constants.VALUE_TYPE_UINT64:
-                    //TODO || (Integer) value < Byte.MIN_VALUE)
-                    BigInteger int1 = new BigInteger((String)thisValue);
-                    if(int1.compareTo(BigInteger.valueOf(Long.MAX_VALUE).multiply(BigInteger.valueOf(2))) == 1){
-                        log.error("VALUE OVERFLOW: value {} found in {} parameter {}", thisValue, valueEncoding, name);
-                    }
-                    break;
-                default:
-                    log.error("UNEXPECTED VALUE TYPE {} for parameter type {} for parameter {}", valueEncoding, parameterType, name);
-                    log.error("Parameter: {}", this.toString());
-            }
-        } catch (NumberFormatException | ClassCastException e){
-            e.printStackTrace();
-            log.error("Expected VALUE TYPE {}, received VALUE {} for parameter {}", valueEncoding, thisValue, name);
+    public void validateType(Object thisValue) {
+        if (thisValue == null) return;
+        Long longValue;
+        Double doubleValue;
+        boolean badLong = false;
+        if (thisValue instanceof Integer) {
+            longValue = ((Integer) thisValue).longValue();
+            doubleValue = ((Integer) thisValue).doubleValue();
+        } else if (thisValue instanceof Long) {
+            longValue = (Long) thisValue;
+            doubleValue = ((Long) thisValue).doubleValue();
+        } else if (thisValue instanceof Double) {
+            doubleValue = (Double) thisValue;
+            longValue = 0l;
+            badLong = true;
+        } else {
+            log.debug("Non-numeric type for this parameter: {}", this.toString());
+            return;
         }
-        return true;
+
+        switch (valueEncoding) {
+            // INTS
+            case Constants.VALUE_TYPE_INT8:
+                if (longValue > Byte.MAX_VALUE || longValue < Byte.MIN_VALUE || badLong)
+                    failedValidate = true;
+                break;
+            case Constants.VALUE_TYPE_INT16:
+                if (longValue > Short.MAX_VALUE || longValue < Short.MIN_VALUE || badLong)
+                    failedValidate = true;
+                break;
+            case Constants.VALUE_TYPE_INT32:
+                if (longValue > Integer.MAX_VALUE || longValue < Integer.MIN_VALUE || badLong)
+                    failedValidate = true;
+                break;
+            case Constants.VALUE_TYPE_INT64:
+                if (longValue > Long.MAX_VALUE || longValue < Long.MIN_VALUE || badLong)
+                    failedValidate = true;
+                break;
+            // FLOATS
+            case Constants.VALUE_TYPE_FLOAT32:
+                if (doubleValue > Float.MAX_VALUE || doubleValue < -Float.MAX_VALUE)
+                    failedValidate = true;
+                break;
+            case Constants.VALUE_TYPE_FLOAT64:
+                if (doubleValue > Double.MAX_VALUE || doubleValue < -Double.MAX_VALUE)
+                    failedValidate = true;
+                break;
+            // UINTS
+            case Constants.VALUE_TYPE_UINT8:
+                if (longValue > (Byte.MAX_VALUE*2) || longValue < (Byte.MIN_VALUE*2) || badLong)
+                    failedValidate = true;
+                break;
+            case Constants.VALUE_TYPE_UINT16:
+                if (longValue > (Short.MAX_VALUE*2) || longValue < (Short.MIN_VALUE*2) || badLong)
+                    failedValidate = true;
+                break;
+            case Constants.VALUE_TYPE_UINT32:
+                if (longValue > (Long.MAX_VALUE) || longValue < Long.MIN_VALUE || badLong)
+                    failedValidate = true;
+                break;
+            case Constants.VALUE_TYPE_UINT64:
+                // TODO || (Integer) value < Byte.MIN_VALUE)
+                // TODO what are big ints going to look like when they get here?
+                BigInteger int1 = new BigInteger((String)thisValue);
+                if(int1.compareTo(BigInteger.valueOf(Long.MAX_VALUE).multiply(BigInteger.valueOf(2))) == 1){
+                    failedValidate = true;
+                }
+                break;
+            default:
+                failedValidate = true;
+        }
+        if (failedValidate) {
+            log.error(String.format("VALUE OVERFLOW or BAD TYPE: parameter %s : %s", this, thisValue));
+        }
+    }
+
+    public boolean isFailedValidate() {
+        return failedValidate;
+    }
+
+    public void setFailedValidate(boolean failedValidate) {
+        this.failedValidate = failedValidate;
+    }
+
+    public boolean isMissing() {
+        return missing;
+    }
+
+    public void setMissing(boolean missing) {
+        this.missing = missing;
     }
 }
