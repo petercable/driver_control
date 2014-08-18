@@ -66,8 +66,13 @@
                                         <TableView fx:id="parameterTable" editable="true" layoutX="14.0" layoutY="14.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" VBox.vgrow="ALWAYS">
                                             <columns>
                                                 <TableColumn fx:id="parameterNameColumn" editable="false" minWidth="200.0" prefWidth="-1.0" text="Parameter" />
-                                                <TableColumn fx:id="parameterValueColumn" minWidth="20.0" prefWidth="150.0" text="Value" />
-                                                <TableColumn fx:id="parameterNewValueColumn" minWidth="20.0" prefWidth="150.0" text="New Value" />
+                                                <TableColumn fx:id="parameterValueColumn" minWidth="20.0" prefWidth="50.0" text="Value" />
+                                                <TableColumn fx:id="parameterUnitsColumn" minWidth="20.0" prefWidth="50.0" text="Units" />
+                                                <TableColumn fx:id="parameterNewValueColumn" minWidth="20.0" prefWidth="50.0" text="New Value" />
+                                                <TableColumn fx:id="parameterValueDescriptionColumn" minWidth="20.0" prefWidth="150.0" text="Value Description" />
+                                                <TableColumn fx:id="parameterVisibility" minWidth="20.0" prefWidth="150.0" text="Value Visibility" />
+                                                <TableColumn fx:id="parameterStartup" minWidth="20.0" prefWidth="150.0" text="Startup" />
+                                                <TableColumn fx:id="parameterDirectAccess" minWidth="20.0" prefWidth="150.0" text="Direct Access" />
                                             </columns>
                                         </TableView>
                                         <HBox alignment="TOP_RIGHT" VBox.vgrow="NEVER">

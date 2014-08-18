@@ -30,13 +30,13 @@ public class DriverModel {
     // coefficient data stored here
     private final Map<String, String> coefficients = new HashMap<>();
 
-    // storage for commands, parameters, samples
+    // storage for commandMetadata, parameterMetadata, samples
     protected final ObservableList<ProtocolCommand> commandList = FXCollections.observableArrayList();
     protected final ObservableList<Parameter> paramList = FXCollections.observableArrayList();
     protected final ObservableList<String> sampleTypes = FXCollections.observableArrayList();
     protected Map<String, ObservableList<Map<String, Object>>> sampleLists = new HashMap<>();
-    protected Map<String, ProtocolCommand> commands = new HashMap<>();
-    protected Map<String, Parameter> parameters = new HashMap<>();
+    protected Map<String, ProtocolCommand> commandMetadata = new HashMap<>();
+    protected Map<String, Parameter> parameterMetadata = new HashMap<>();
 
     // properties to hold protocol state, connection and interface status
     private SimpleStringProperty state = new SimpleStringProperty();
@@ -80,27 +80,30 @@ public class DriverModel {
             String name = (String) _name;
             String displayName = getString((JSONObject)_commands.get(name), "display_name");
             ProtocolCommand command = new ProtocolCommand(name, displayName);
-            commands.put(name, command);
+            commandMetadata.put(name, command);
         }
 
+        // parameters={SampleInterval={set_timeout=10, visibility=READ_WRITE, get_timeout=10, startup=true,
+        // direct_access=false, display_name=Polled Interval, value={default=5, units=s, type=int}}},
         for (Object _name: _parameters.keySet()) {
             String name = (String) _name;
             JSONObject param = (JSONObject) _parameters.get(name);
             String displayName = getString(param, "display_name");
             String visibility = getString(param, "visibility");
             String description = getString(param, "description");
+            String startup = getString(param, "startup");
+            String directAccess = getString(param, "direct_access");
 
             JSONObject value = (JSONObject) param.get("value");
             String valueDescription = getString(value, "description");
             String valueType = getString(value, "type");
             String units = getString(value, "units");
-            Parameter paramObj = new Parameter(name, displayName, description, visibility,
+            Parameter paramObj = new Parameter(name, displayName, description, visibility, startup, directAccess,
                     valueDescription, valueType, units);
-            parameters.put(name, paramObj);
-            paramList.add(paramObj);
+            parameterMetadata.put(name, paramObj);
         }
-        log.debug(commands);
-        log.debug(parameters);
+        log.debug("Parsed metadata: commands = {}", commandMetadata);
+        log.debug("Parsed metadata: parameters = {}", parameterMetadata);
     }
 
     public void parseCapabilities(JSONArray capes) {
@@ -111,10 +114,10 @@ public class DriverModel {
             log.debug("CAPABILITY: {}", cape);
             String capability = (String) cape;
             log.debug("Found capability: " + capability);
-            ProtocolCommand command = commands.get(capability);
+            ProtocolCommand command = commandMetadata.get(capability);
             if (command == null) {
                 command = new ProtocolCommand(capability, "");
-                commands.put(capability, command);
+                commandMetadata.put(capability, command);
             }
             if (command.getName().equals("DRIVER_EVENT_GET")) continue;
             if (command.getName().equals("DRIVER_EVENT_SET")) {
@@ -141,17 +144,21 @@ public class DriverModel {
     }
 
     public void setParams(JSONObject params) {
+        // TODO handle incomplete parameter lists?
+        log.debug("setParams, clearing parameterList");
+        paramList.clear();
         if (params != null) {
             for (Object key : params.keySet()) {
                 String name = (String) key;
                 String value = getString(params, name);
                 if (name != null) {
-                    Parameter param = parameters.get(name);
+                    Parameter param = parameterMetadata.get(name);
                     if (param != null) {
                         if (!Objects.equals(param.getValue(), value)) {
                             log.debug("UPDATED PARAM: " + name + " VALUE: " + value);
                             param.setValue(value);
                         }
+                        paramList.add(param);
                     }
                 }
             }

@@ -41,7 +41,12 @@ public class ControlWindow {
     @FXML private TableColumn<ProtocolCommand, String> commandNameColumn;
     @FXML private TableColumn<Parameter, String> parameterNameColumn;
     @FXML private TableColumn<Parameter, String> parameterValueColumn;
+    @FXML private TableColumn<Parameter, String> parameterUnitsColumn;
     @FXML private TableColumn<Parameter, String> parameterNewValueColumn;
+    @FXML private TableColumn<Parameter, String> parameterValueDescriptionColumn;
+    @FXML private TableColumn<Parameter, String> parameterVisibility;
+    @FXML private TableColumn<Parameter, String> parameterStartup;
+    @FXML private TableColumn<Parameter, String> parameterDirectAccess;
     @FXML private TextField stateField;
     @FXML private TextField statusField;
     @FXML private TextField connectionStatusField;
@@ -124,7 +129,12 @@ public class ControlWindow {
 
         parameterNameColumn.setCellValueFactory(new PropertyValueFactory<>("displayName"));
         parameterValueColumn.setCellValueFactory(new PropertyValueFactory<>("value"));
+        parameterUnitsColumn.setCellValueFactory(new PropertyValueFactory<>("units"));
         parameterNewValueColumn.setCellValueFactory(new PropertyValueFactory<>("newValue"));
+        parameterValueDescriptionColumn.setCellValueFactory(new PropertyValueFactory<>("valueDescription"));
+        parameterVisibility.setCellValueFactory(new PropertyValueFactory<>("visibility"));
+        parameterStartup.setCellValueFactory(new PropertyValueFactory<>("startup"));
+        parameterDirectAccess.setCellValueFactory(new PropertyValueFactory<>("directAccess"));
         parameterNewValueColumn.setCellFactory(TextFieldTableCell.<Parameter>forTableColumn());
 
         parameterNewValueColumn.setOnEditCommit(
@@ -161,7 +171,7 @@ public class ControlWindow {
         if (! checkController()) return;
         log.debug("clicked send params");
         Map<String, Object> values = new HashMap<>();
-        for (Parameter p: model.parameters.values()) {
+        for (Parameter p: model.parameterMetadata.values()) {
             Object sendValue;
             String newValue = p.getNewValue();
             String oldValue = p.getValue();
@@ -181,7 +191,7 @@ public class ControlWindow {
             }
             values.put(p.getName(), sendValue);
         }
-        for (Parameter p: model.parameters.values()) {
+        for (Parameter p: model.parameterMetadata.values()) {
             p.setNewValue("");
         }
         driverInterface.setResource(new JSONObject(values).toString());
@@ -367,7 +377,7 @@ public class ControlWindow {
 
     public void getParams() {
         if (! checkController()) return;
-        model.setStatus("Getting parameters...");
+        model.setStatus("Getting parameterMetadata...");
         model.setParams((JSONObject) driverInterface.getResource("DRIVER_PARAMETER_ALL"));
     }
 

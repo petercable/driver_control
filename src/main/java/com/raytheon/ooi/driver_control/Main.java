@@ -32,7 +32,7 @@ public class Main extends Application {
                 File path = Paths.get(parameters.getNamed().get("config")).toFile();
                 controlWindow.loadConfig(path);
             }
-            log.debug("parameters: {}", parameters.getNamed());
+            log.debug("parameterMetadata: {}", parameters.getNamed());
         }
         catch (Exception e) {
             e.printStackTrace();
