@@ -215,6 +215,13 @@ public class DataParameter {
                     log.debug("Found some other sort of object: {} {}", getValue(), getValue().getClass().toString());
                 }
                 break;
+            case Constants.PARAMETER_TYPE_BOOLEAN:
+                if (!(getValue() instanceof Boolean))
+                    log.error("UNEXPECTED VALUE {} for parameter type {} for parameter {}", getValue(), parameterType, name);
+                break;
+            case Constants.PARAMETER_TYPE_CATEGORY:
+                log.debug("YAHOO, found {}: {}", parameterType, getValue());
+                break;
             default:
                 log.error("Missing parameterType from switch statement in validate: {}", this);
         }
