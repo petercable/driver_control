@@ -98,19 +98,15 @@ public class DriverLauncher {
           assumes we are already in the directory containing the egg to be patched */
         log.debug("Patching zmq_driver to use JSON");
         String[] commands = {
-                String.format("sed -i .bak s/pyobj/json/g %s/mi/core/instrument/zmq_driver_process.py", scenarioPath),
-                String.format("sed -i .bak 's/if isinstance(addr, str) and//g' %s/mi/core/instrument/instrument_driver.py", scenarioPath),
-                String.format("sed -i .bak s/INFO/DEBUG/g %s/res/config/mi-logging.yml", scenarioPath),
-                String.format("sed -i .bak 's/except IndexError:\n                    " +
-                        "time.sleep(.1)/except Exception as e:\n                    " +
-                        "time.sleep(.1)\n                    " +
-                        "log.debug(\"Exception: %%s\", e)/g' " +
-                        "%s/mi/core/instrument/zmq_driver_process.py", scenarioPath),
-                String.format("cp %s/res/config/mi-logging.yml %s/mi/mi-logging.yml", scenarioPath, scenarioPath)
+            String.format("sed -i .bak s/INFO/DEBUG/g %s/res/config/mi-logging.yml", scenarioPath),
+            String.format("cp %s/res/config/mi-logging.yml %s/mi/mi-logging.yml", scenarioPath, scenarioPath)
         };
         for (String command: commands) {
             Runtime.getRuntime().exec(command).waitFor();
         }
+        InputStream is = DriverLauncher.class.getClass().getResourceAsStream("/" + "zmq_driver_process.py");
+        OutputStream os = new FileOutputStream(Paths.get(scenarioPath, "mi", "core", "instrument", "zmq_driver_process.py").toFile());
+        IOUtils.copy(is, os);
     }
 
     public static void unzipDriver(String eggPath, String scenarioPath)

@@ -23,7 +23,7 @@ public abstract class PreloadDatabase {
     public abstract void connect() throws Exception;
 
     public String getParameterName(String id) {
-        log.debug("getParameters: {}", id);
+        log.debug("getParameterName: {}", id);
         try (Statement stmt = connection.createStatement()) {
             String sql = String.format("SELECT name FROM parameterdefs WHERE id='%s';", id);
             ResultSet rs = stmt.executeQuery(sql);
@@ -97,7 +97,7 @@ public abstract class PreloadDatabase {
                 for (String id: params) {
                     DataParameter dp = getParameterById(id);
                     dp.setStream(ds);
-                    ds.getParams().put(dp.getName(), dp);
+                    ds.getParams().put(dp.name, dp);
                 }
             }
         } catch (SQLException e) {
@@ -124,7 +124,7 @@ public abstract class PreloadDatabase {
                         rs.getString("value_encoding"),
                         rs.getString("parameter_function_id"),
                         rs.getString("parameter_function_map"));
-                log.trace("Created DataParameter: {}", dp);
+                log.debug("Created DataParameter: {}", dp);
                 return dp;
             }
             return null;

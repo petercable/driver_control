@@ -1,6 +1,6 @@
 package com.raytheon.ooi.driver_control;
 
-import com.raytheon.ooi.common.Constants;
+import com.raytheon.ooi.preload.DataStream;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -12,6 +12,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import org.json.simple.JSONValue;
 
 import java.io.File;
 import java.io.FileReader;
@@ -28,13 +29,13 @@ public class DriverModel {
     private DriverConfig config;
 
     // coefficient data stored here
-    private final Map<String, String> coefficients = new HashMap<>();
+    private final Map<String, Object> coefficients = new HashMap<>();
 
     // storage for commandMetadata, parameterMetadata, samples
     protected final ObservableList<ProtocolCommand> commandList = FXCollections.observableArrayList();
     protected final ObservableList<Parameter> paramList = FXCollections.observableArrayList();
     protected final ObservableList<String> sampleTypes = FXCollections.observableArrayList();
-    protected Map<String, ObservableList<Map<String, Object>>> sampleLists = new HashMap<>();
+    protected Map<String, ObservableList<DataStream>> sampleLists = new HashMap<>();
     protected Map<String, ProtocolCommand> commandMetadata = new HashMap<>();
     protected Map<String, Parameter> parameterMetadata = new HashMap<>();
 
@@ -165,15 +166,14 @@ public class DriverModel {
         }
     }
 
-    protected void publishSample(Map<String, Object> sample) {
-        String streamName = (String) sample.get(Constants.STREAM_NAME);
+    protected void publishSample(DataStream sample) {
         Platform.runLater(()->{
-            if (!sampleLists.containsKey(streamName)) {
-                sampleLists.put(streamName, FXCollections.observableArrayList(new ArrayList<Map<String, Object>>()));
-                sampleTypes.add(streamName);
+            if (!sampleLists.containsKey(sample.name)) {
+                sampleLists.put(sample.name, FXCollections.observableArrayList(new ArrayList<>()));
+                sampleTypes.add(sample.name);
             }
             try {
-                List<Map<String, Object>> samples = sampleLists.get(streamName);
+                List<DataStream> samples = sampleLists.get(sample.name);
                 if (samples != null) samples.add(sample);
             } catch (Exception e) {
                 e.printStackTrace();
@@ -181,11 +181,11 @@ public class DriverModel {
         });
     }
 
-    public Map<String, String> getCoefficients() {
+    public Map<String, Object> getCoefficients() {
         return coefficients;
     }
 
-    public void updateCoefficients(Map<String, String> coefficients) {
+    public void updateCoefficients(Map<String, Object> coefficients) {
         this.coefficients.putAll(coefficients);
     }
 
@@ -195,7 +195,8 @@ public class DriverModel {
         for (CSVRecord record: records) {
             try {
                 String name = record.get(1);
-                String value = record.get(2);
+                Object value = record.get(2);
+                value = JSONValue.parse((String)value);
                 log.debug("Found coefficient {} : {}", name, value);
                 coefficients.put(name, value);
             } catch (ArrayIndexOutOfBoundsException ignore) { }
