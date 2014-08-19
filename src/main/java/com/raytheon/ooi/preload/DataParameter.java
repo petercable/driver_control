@@ -14,7 +14,6 @@ import java.io.BufferedReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -151,7 +150,7 @@ public class DataParameter {
                 writer.append(String.format("result = %s(%s)\n", df.getFunction(), joiner.toString()));
             else
                 writer.append(String.format("result = %s\n", df.getFunction()));
-            writer.append("print json.dumps(list(result))\n");
+            writer.append("print json.dumps(result.tolist())\n");
             writer.close();
             log.debug("ION_FUNCTION: {}", ion_function);
             String[] command = {"python", ion_function.toString()};
