@@ -8,6 +8,7 @@ import org.apache.logging.log4j.Logger;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 
+import java.io.IOException;
 import java.util.Observable;
 import java.util.Observer;
 
@@ -36,9 +37,13 @@ public class DriverEventHandler implements Observer {
                     });
                     break;
                 case Constants.SAMPLE_EVENT:
-                    DataStream sample = DriverSampleFactory.parseSample((String)eventValue);
-                    log.info("Received SAMPLE event: " + sample);
-                    Platform.runLater(()->model.publishSample(sample));
+                    try {
+                        final DataStream sample = DriverSampleFactory.parseSample((String) eventValue);
+                        log.info("Received SAMPLE event: " + sample);
+                        Platform.runLater(()->model.publishSample(sample));
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                     break;
                 case Constants.CONFIG_CHANGE_EVENT:
                     Platform.runLater(()->model.setParams((JSONObject) eventValue));

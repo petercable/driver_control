@@ -14,7 +14,6 @@ import java.io.BufferedReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -32,7 +31,6 @@ public class DataParameter {
     public final String valueEncoding;
     public final String parameterFunctionId;
     public final String parameterFunctionMap;
-    private final Map<String, Object> coefficients = model.getCoefficients();
 
     private Object value;
     private DataStream stream;
@@ -70,7 +68,9 @@ public class DataParameter {
     }
 
     public synchronized Object getValue() {
-        // do something here
+        if (stream == null)
+            // stream not yet defined, we can't calculate squat
+            return value;
         if (parameterType.equals(Constants.PARAMETER_TYPE_FUNCTION) && value == null) {
             value = calculateValue();
         }
@@ -151,7 +151,7 @@ public class DataParameter {
                 writer.append(String.format("result = %s(%s)\n", df.getFunction(), joiner.toString()));
             else
                 writer.append(String.format("result = %s\n", df.getFunction()));
-            writer.append("print json.dumps(list(result))\n");
+            writer.append("print json.dumps(result.tolist())\n");
             writer.close();
             log.debug("ION_FUNCTION: {}", ion_function);
             String[] command = {"python", ion_function.toString()};
@@ -210,7 +210,10 @@ public class DataParameter {
                         log.debug("Found byte array: {}", getValue());
                     }
                 } else {
-                    log.debug("Found some other sort of object: {} {}", getValue(), getValue().getClass().toString());
+                    Object value = getValue();
+                    Object classType = null;
+                    if (value != null) classType = value.getClass();
+                    log.debug("Found some other sort of object: {} {}", value, classType);
                 }
                 break;
             case Constants.PARAMETER_TYPE_BOOLEAN:
@@ -303,10 +306,6 @@ public class DataParameter {
 
     public boolean isFailedValidate() {
         return failedValidate;
-    }
-
-    public void setFailedValidate(boolean failedValidate) {
-        this.failedValidate = failedValidate;
     }
 
     public boolean isMissing() {

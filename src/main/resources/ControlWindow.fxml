@@ -84,6 +84,20 @@
                                 </VBox>
                             </content>
                         </Tab>
+                        <Tab text="Samples">
+                            <content>
+                                <VBox>
+                                    <children>
+                                        <TabPane fx:id="sampleTabPane" minHeight="100.0" minWidth="100.0" tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS" />
+                                        <HBox alignment="TOP_RIGHT" VBox.vgrow="NEVER">
+                                            <children>
+
+                                            </children>
+                                        </HBox>
+                                    </children>
+                                </VBox>
+                            </content>
+                        </Tab>
                     </tabs>
                 </TabPane>
                 <HBox minHeight="26.0">
