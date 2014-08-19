@@ -55,8 +55,8 @@ public class ControlWindow {
     @FXML private TextField connectionStatusField;
     @FXML private Button sendParamButton;
     @FXML private TabPane tabPane;
+    @FXML private TabPane sampleTabPane;
 
-    private TabPane sampleTabPane;
     private static final Logger log = LogManager.getLogger(ControlWindow.class);
     protected Process driverProcess = null;
     protected DriverInterface driverInterface = null;
@@ -91,15 +91,6 @@ public class ControlWindow {
                     for (String sample : change.getAddedSubList()) {
                         log.debug("added sample type: " + sample);
                         // new sample type detected
-                        // create nested TabPane if necessary
-                        if (null == sampleTabPane) {
-                            Tab rootSampleDataTab = new Tab("Sample Data");
-                            tabPane.getTabs().add(rootSampleDataTab);
-                            sampleTabPane = new TabPane();
-                            sampleTabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
-                            rootSampleDataTab.setContent(sampleTabPane);
-                        }
-
                         // create a new sample/stream tab
                         if (sample.equals("raw")) continue;
                         Tab tab = new Tab(sample);
@@ -133,28 +124,24 @@ public class ControlWindow {
                                             Object value = item.getValue();
                                             if (value == null) {
                                                 setText("not present");
-                                                setTextFill(Color.CHOCOLATE);
+                                                setStyle("-fx-background-color: yellow");
                                             } else {
                                                 setText(item.getValue().toString());
                                                 setTextFill(Color.BLACK);
-                                                // parameter in instrument stream, not in preload
-                                                if (item.isMissing()) {
-                                                    setStyle("-fx-background-color: lightgreen");
-                                                // function, missing input value
-                                                } else if (item.getIsDummy()) {
-                                                    setStyle("-fx-background-color: yellow");
-                                                // function, calculated value
-                                                } else if (item.parameterType.equals(Constants.PARAMETER_TYPE_FUNCTION)) {
-                                                    if (item.isFailedValidate())
-                                                        setStyle("-fx-background-color: orange");
+                                                if (item.parameterType.equals(Constants.PARAMETER_TYPE_FUNCTION)) {
+                                                    if (item.getIsDummy())
+                                                        setStyle("-fx-font-weight: bold; -fx-background-color: yellow");
+                                                    else if (item.isFailedValidate())
+                                                        setStyle("-fx-font-weight: bold; -fx-background-color: orangered");
                                                     else
-                                                        setStyle("-fx-background-color: lightblue");
-                                                // raw input, out of range
-                                                } else if (item.isFailedValidate()) {
-                                                    setStyle("-fx-background-color: orangered");
+                                                        setStyle("-fx-font-weight: bold");
                                                 } else {
-                                                    setTextFill(Color.BLACK);
-                                                    setStyle("");
+                                                    if (item.getIsDummy())
+                                                        setStyle("-fx-background-color: yellow");
+                                                    else if (item.isFailedValidate())
+                                                        setStyle("-fx-background-color: orangered");
+                                                    if (item.isMissing())
+                                                        setTextFill(Color.RED);
                                                 }
                                             }
                                         }

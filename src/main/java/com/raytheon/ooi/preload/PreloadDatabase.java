@@ -81,10 +81,7 @@ public abstract class PreloadDatabase {
     public DataStream getStream(String name) {
         DataStream ds = new DataStream(name);
         log.debug("Created DataStream: {}", ds);
-        try (
-                Statement stmt = connection.createStatement();
-                Statement stmt2 = connection.createStatement()
-        ) {
+        try (Statement stmt = connection.createStatement()) {
             String sql = String.format(
                     "SELECT parameter_ids FROM parameterdictionary " +
                             "WHERE name='%s';", name);

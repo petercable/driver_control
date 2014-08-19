@@ -31,7 +31,6 @@ public class DataParameter {
     public final String valueEncoding;
     public final String parameterFunctionId;
     public final String parameterFunctionMap;
-    private final Map<String, Object> coefficients = model.getCoefficients();
 
     private Object value;
     private DataStream stream;
@@ -69,7 +68,9 @@ public class DataParameter {
     }
 
     public synchronized Object getValue() {
-        // do something here
+        if (stream == null)
+            // stream not yet defined, we can't calculate squat
+            return value;
         if (parameterType.equals(Constants.PARAMETER_TYPE_FUNCTION) && value == null) {
             value = calculateValue();
         }
@@ -209,7 +210,10 @@ public class DataParameter {
                         log.debug("Found byte array: {}", getValue());
                     }
                 } else {
-                    log.debug("Found some other sort of object: {} {}", getValue(), getValue().getClass().toString());
+                    Object value = getValue();
+                    Object classType = null;
+                    if (value != null) classType = value.getClass();
+                    log.debug("Found some other sort of object: {} {}", value, classType);
                 }
                 break;
             case Constants.PARAMETER_TYPE_BOOLEAN:
@@ -302,10 +306,6 @@ public class DataParameter {
 
     public boolean isFailedValidate() {
         return failedValidate;
-    }
-
-    public void setFailedValidate(boolean failedValidate) {
-        this.failedValidate = failedValidate;
     }
 
     public boolean isMissing() {
