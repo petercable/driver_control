@@ -130,11 +130,11 @@ public class ControlWindow {
                                                 setTextFill(Color.BLACK);
                                                 if (item.parameterType.equals(Constants.PARAMETER_TYPE_FUNCTION)) {
                                                     if (item.getIsDummy())
-                                                        setStyle("-fx-font-weight: bold; -fx-background-color: yellow");
+                                                        setStyle("-fx-font-weight: bold; -fx-background-color: darkyellow");
                                                     else if (item.isFailedValidate())
-                                                        setStyle("-fx-font-weight: bold; -fx-background-color: orangered");
+                                                        setStyle("-fx-font-weight: bold; -fx-background-color: red");
                                                     else
-                                                        setStyle("-fx-font-weight: bold");
+                                                        setStyle("-fx-font-weight: bold; -fx-background-color: lightgrey");
                                                 } else {
                                                     if (item.getIsDummy())
                                                         setStyle("-fx-background-color: yellow");
