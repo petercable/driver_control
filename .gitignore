@@ -4,5 +4,6 @@
 build
 target
 out
+*.iml
 *.log
 hs_err_pid*
