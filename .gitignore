@@ -1,0 +1,9 @@
+.idea
+.gradle
+.DS_Store
+gradle
+build
+target
+out
+*.log
+hs_err_pid*

@@ -1,0 +1,8 @@
+driver_config:
+    scenario: PARAD_A
+port_agent_config:
+    addr: rsn-port-agent-test.oceanobservatories.org
+    port: 13009
+    cmd_port: 12009
+startup_config:
+    parameters:

@@ -1,0 +1,27 @@
+driver_config:
+  scenario: CTD_CABLED_SBE43
+port_agent_config:
+  addr: rsn-port-agent-test.oceanobservatories.org
+  port: 13021
+  cmd_port: 12021
+startup_config:
+  parameters:
+    ptype: 1
+    volt0: True
+    volt1: False
+    volt2: False
+    volt3: False
+    volt4: False
+    volt5: False
+    sbe38: False
+    wetlabs: False
+    gtd: False
+    dual_gtd: False
+    sbe63: False
+    optode: False
+    output_format: 0
+    num_avg_samples: 4
+    min_cond_freq: 500
+    pump_delay: 60
+    auto_run: False
+    ignore_switch: True
