@@ -47,12 +47,12 @@ run {
     }
 }
 
-task clone_preload(type:Exec) << {
+task clone_preload(type:Exec) {
     println 'Cloning submodule preload_parser'
     commandLine 'git', 'submodule', 'update', '--init'
 }
 
-task preload(type:Exec, dependsOn:clone_preload) << {
+task preload(type:Exec, dependsOn:clone_preload) {
     println 'Generating preload database'
     commandLine 'python', parser.toString()
 }
