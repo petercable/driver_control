@@ -60,7 +60,7 @@ The following driver configuration file sets up testing for the TRHPH instrument
 **Launch Driver Control**
 
 ```
-    java -jar driver_control.jar
+    ./gradlew run
 ```
 
 Driver Config allows step by step execution of instrument driver commands. The protocol driver must be executed 
@@ -68,6 +68,9 @@ in the following sequence:
 
 1. **Load test configuration**. Test configuration can be loaded two ways:
   * Specify the test configuration file on the command line (*--config=<config file>*).
+```
+    ./gradlew run -PappArgs="['--config=src/main/resources/thsph.yaml']"
+```
   * Use the menu option *File->Load Config*.
   
 2. **Launch the driver**. The instrument driver must be running prior to testing, although it is not necessary to 
@@ -76,9 +79,8 @@ start it from within Driver Control if it is already running.
 3. **Connect to the driver**. Select the menu option *Test->Connect to Driver*. The driver log file will 
 indicate a successful connection.  The bottom left status box will indicate the current driver state. 
 
-  * If the driver was started in Driver Control, the Driver Log tab can be used to view the log file. 
-  * If the driver was started during this session of Driver Control, the driver state should read 
-    *DRIVER_STATE_UNCONFIGURED*.
+  * Driver Control will attempt to exercise the driver through DISCOVER and into a known state.  If this fails
+    you can step through the individual steps through the "Driver" menu.
 
 4. **Configure the driver**. If the driver state is *DRIVER_STATE_UNCONFIGURED*, send the instrument driver the 
 configure command using menu option *Driver->Configure*. This can be verified in the driver log file.
