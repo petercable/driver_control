@@ -1,0 +1,16 @@
+driver_config:
+    scenario: NUTNR_A
+port_agent_config:
+    addr: rsn-port-agent-test.oceanobservatories.org
+    port: 13011
+    cmd_port: 12011
+startup_config:
+    parameters:
+        opermode: Polled
+        operctrl: Samples
+        lgtsmpls: 5
+        drksmpls: 1
+        lgtdurat: 10
+        drkdurat: 5
+        nmlgtspl: 1
+        tlgtsmpl: 5

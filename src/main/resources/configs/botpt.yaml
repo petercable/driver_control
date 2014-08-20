@@ -1,0 +1,14 @@
+driver_config:
+  scenario: BOTPT
+port_agent_config:
+  addr: localhost
+  port: 6004
+  cmd_port: 6005
+startup_config:
+  parameters:
+    auto_relevel: False
+    relevel_timeout: 600
+    xtilt_relevel_trigger: 300.0
+    ytilt_relevel_trigger: 300.0
+    heat_duration: 1
+    output_rate_hz: 1

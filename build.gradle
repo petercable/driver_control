@@ -1,0 +1,61 @@
+apply plugin: 'java'
+apply plugin: 'application'
+
+group = 'com.raytheon.ooi'
+version = '1.0'
+mainClassName = "com.raytheon.ooi.driver_control.Main"
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+def parser = new File('lib/preload/parse_preload.py')
+def db = new File('preload.db')
+
+repositories {
+        
+     maven { url "http://repository.apache.org/snapshots/" }
+     maven { url "http://repo.maven.apache.org/maven2" }
+}
+dependencies {
+    compile group: 'org.apache.logging.log4j', name: 'log4j-api', version:'2.0'
+    compile group: 'org.apache.logging.log4j', name: 'log4j-core', version:'2.0'
+
+    compile group: 'org.zeromq', name: 'jeromq', version:'0.3.4'
+    compile group: 'org.yaml', name: 'snakeyaml', version:'1.13'
+    compile group: 'org.controlsfx', name: 'controlsfx', version:'8.0.6'
+    compile group: 'org.xerial', name: 'sqlite-jdbc', version:'3.7.15-M1'
+    compile group: 'org.commonjava.googlecode.markdown4j', name: 'markdown4j', version:'2.2-cj-1.0'
+
+    compile group: 'org.apache.poi', name: 'poi-ooxml', version:'3.10-FINAL'
+    compile group: 'org.apache.commons', name: 'commons-lang3', version:'3.3.2'
+    compile group: 'org.apache.commons', name: 'commons-csv', version:'1.0-SNAPSHOT'
+    compile group: 'org.apache.commons', name: 'commons-io', version:'1.3.2'
+
+    compile group: 'com.googlecode.json-simple', name: 'json-simple', version:'1.1.1'
+    compile group: 'org.codehaus.jackson', name: 'jackson-mapper-asl', version:'1.9.13'
+}
+
+jar {
+    // this line below will make a "fat" jar
+    //from configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+    manifest { attributes 'Main-Class': 'com.raytheon.ooi.driver_control.Main' }
+}
+
+run {
+    if ( project.hasProperty("appArgs") ) {
+        args Eval.me(appArgs)
+    }
+}
+
+task clone_preload(type:Exec) << {
+    println 'Cloning submodule preload_parser'
+    commandLine 'git', 'submodule', 'update', '--init'
+}
+
+task preload(type:Exec, dependsOn:clone_preload) << {
+    println 'Generating preload database'
+    commandLine 'python', parser.toString()
+}
+
+clone_preload.onlyIf { !parser.exists() }
+preload.onlyIf { !db.exists() }

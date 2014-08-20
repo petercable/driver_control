@@ -1,0 +1,8 @@
+driver_config:
+    scenario: TRHPH_A
+port_agent_config:
+    addr: rsn-port-agent-test.oceanobservatories.org
+    port: 13008
+    cmd_port: 12008
+startup_config:
+    parameters:

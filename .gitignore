@@ -1,7 +1,9 @@
 .idea
-target
-driver_control.log
+.gradle
 .DS_Store
+build
+target
 out
-mi-drivers.log*
+*.iml
+*.log
 hs_err_pid*

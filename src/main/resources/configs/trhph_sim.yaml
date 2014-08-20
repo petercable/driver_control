@@ -1,0 +1,8 @@
+driver_config:
+    scenario: TRHPH_A
+port_agent_config:
+    addr: localhost
+    port: 6004
+    cmd_port: 6005
+startup_config:
+    parameters:
