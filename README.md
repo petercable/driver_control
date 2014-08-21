@@ -114,11 +114,10 @@ instrument.
        
       * You must press *Enter* in the cell for the parameter value to be saved.
       
-  * **Stream validation**. Verify the streams are published as expected and produce the correct values. 
-    Select *Test->Validate Streams* after collecting stream data from the driver to compare against the values
-    supplied to the Preload spreadsheet.
+  * **Stream validation**. Verify the streams are published as expected and produce the correct values. This
+     occurs automatically as data particles are received.
     
-  * **Algorithm validation**. Verify data published by the streams can be used to provide data to algorithms. 
+  * **Algorithm validation**. Verify data published by the streams can be used to provide data to algorithms. This
+     occurs automatically as data particles are received.
     
-    * *This is feature is only partially implemented in Driver Control.*
-      
+
