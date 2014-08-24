@@ -10,6 +10,7 @@ targetCompatibility = 1.8
 
 def parser = new File(projectDir.toString() + '/lib/preload/parse_preload.py')
 def workDir = new File(projectDir.toString() + "/workDir")
+def logDir = new File(projectDir.toString() + "/logs")
 def db = new File(workDir.toString() + '/preload.db')
 
 mainClassName = "com.raytheon.ooi.driver_control.Main"
@@ -64,7 +65,7 @@ task makeWorkDir {
 }
 
 task cleanWork(type:Delete) {
-    delete workDir
+    delete workDir, logDir
 }
 
 task clone_preload(type:Exec) {
