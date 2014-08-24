@@ -5,6 +5,7 @@ build
 target
 out
 workDir
+logs
 *.iml
 *.log
 hs_err_pid*

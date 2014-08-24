@@ -4,8 +4,8 @@ import com.raytheon.ooi.common.Constants;
 import com.raytheon.ooi.common.JsonHelper;
 import com.raytheon.ooi.preload.DataStream;
 import javafx.application.Platform;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Map;
@@ -16,7 +16,7 @@ import java.util.Observer;
 public class DriverEventHandler implements Observer {
 
     private final DriverModel model = DriverModel.getInstance();
-    private final static Logger log = LogManager.getLogger(DriverEventHandler.class);
+    private final static Logger log = LoggerFactory.getLogger(DriverEventHandler.class);
 
     public DriverEventHandler() {}
 

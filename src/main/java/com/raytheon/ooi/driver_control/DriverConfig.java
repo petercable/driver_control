@@ -1,7 +1,7 @@
 package com.raytheon.ooi.driver_control;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.File;
@@ -12,7 +12,7 @@ import java.nio.file.Paths;
 import java.util.Map;
 
 public class DriverConfig {
-    private final static Logger log = LogManager.getLogger(DriverConfig.class);
+    private final static Logger log = LoggerFactory.getLogger(DriverConfig.class);
     private Map portAgentConfig;
     private Map startupConfig;
     private String scenario;

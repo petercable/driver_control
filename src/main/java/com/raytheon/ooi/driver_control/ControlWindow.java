@@ -24,11 +24,11 @@ import javafx.scene.layout.AnchorPane;
 import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.controlsfx.control.action.Action;
 import org.controlsfx.dialog.Dialog;
 import org.controlsfx.dialog.Dialogs;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -55,7 +55,7 @@ public class ControlWindow {
     @FXML private TabPane tabPane;
     @FXML private TabPane sampleTabPane;
 
-    private static final Logger log = LogManager.getLogger(ControlWindow.class);
+    private static final Logger log = LoggerFactory.getLogger(ControlWindow.class);
     protected Process driverProcess = null;
     protected DriverInterface driverInterface = null;
 

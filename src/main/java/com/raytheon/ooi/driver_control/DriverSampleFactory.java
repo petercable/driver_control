@@ -5,8 +5,8 @@ import com.raytheon.ooi.common.JsonHelper;
 import com.raytheon.ooi.preload.DataStream;
 import com.raytheon.ooi.preload.PreloadDatabase;
 import com.raytheon.ooi.preload.SqlitePreloadDatabase;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Base64;
@@ -16,7 +16,7 @@ import java.util.Map;
 
 public class DriverSampleFactory {
     private static final PreloadDatabase db = SqlitePreloadDatabase.getInstance();
-    private static final Logger log = LogManager.getLogger(DriverSampleFactory.class);
+    private static final Logger log = LoggerFactory.getLogger(DriverSampleFactory.class);
 
     private DriverSampleFactory() {
     }
@@ -36,7 +36,6 @@ public class DriverSampleFactory {
         log.trace("Loading instrument supplied values into sample object...");
         for (Object json_value : (List)json.get(Constants.VALUES)) {
             Map element = (Map) json_value;
-            log.debug(element);
             Object value = element.get(Constants.VALUE);
             if (value == null) value = "";
             if (element.containsKey("binary")) {

@@ -1,8 +1,8 @@
 package com.raytheon.ooi.driver_control;
 
 import javafx.beans.property.SimpleStringProperty;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Parameter {
     private SimpleStringProperty name;
@@ -16,7 +16,7 @@ public class Parameter {
     private SimpleStringProperty newValue;
     private SimpleStringProperty valueType;
     private SimpleStringProperty units;
-    private static Logger log = LogManager.getLogger();
+    private static Logger log = LoggerFactory.getLogger(Parameter.class);
 
     public Parameter(String name, String displayName, String desc, String vis, String startup, String directAccess,
                      String val_desc, String valType, String units) {

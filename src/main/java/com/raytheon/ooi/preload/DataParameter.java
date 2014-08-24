@@ -4,8 +4,8 @@ import com.raytheon.ooi.common.Constants;
 import com.raytheon.ooi.common.JsonHelper;
 import com.raytheon.ooi.driver_control.DriverLauncher;
 import com.raytheon.ooi.driver_control.DriverModel;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.FileWriter;
@@ -23,7 +23,7 @@ import static com.raytheon.ooi.common.JsonHelper.toList;
 public class DataParameter {
     private final DriverModel model = DriverModel.getInstance();
     private final PreloadDatabase preload = SqlitePreloadDatabase.getInstance();
-    private final static Logger log = LogManager.getLogger(DataParameter.class);
+    private final static Logger log = LoggerFactory.getLogger(DataParameter.class);
 
     public final String id;
     public final String name;

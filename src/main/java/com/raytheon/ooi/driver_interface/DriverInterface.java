@@ -2,8 +2,8 @@ package com.raytheon.ooi.driver_interface;
 
 import com.raytheon.ooi.common.Constants;
 import com.raytheon.ooi.common.JsonHelper;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.*;
@@ -15,7 +15,7 @@ import static com.raytheon.ooi.common.JsonHelper.toJson;
  */
 
 public abstract class DriverInterface extends Observable {
-    private static final Logger log = LogManager.getLogger(DriverInterface.class);
+    private static final Logger log = LoggerFactory.getLogger(DriverInterface.class);
     private static final int DEFAULT_TIMEOUT = 600;
     protected boolean connected = false;
 

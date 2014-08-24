@@ -5,14 +5,14 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.nio.file.Paths;
 
 public class Main extends Application {
-    private static Logger log = LogManager.getLogger();
+    Logger log = LoggerFactory.getLogger(Main.class);
     private ControlWindow controlWindow;
 
     @Override
@@ -32,7 +32,6 @@ public class Main extends Application {
                 File path = Paths.get(parameters.getNamed().get("config")).toFile();
                 controlWindow.loadConfig(path);
             }
-            log.debug("parameterMetadata: {}", parameters.getNamed());
         }
         catch (Exception e) {
             e.printStackTrace();

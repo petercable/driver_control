@@ -6,8 +6,9 @@ import javafx.scene.control.TextField;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebHistory;
 import javafx.scene.web.WebView;
-import org.apache.logging.log4j.LogManager;
 import org.markdown4j.Markdown4jProcessor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -21,7 +22,7 @@ public class HelpWindow {
     @FXML private TextField urlField;
     private WebEngine engine;
     private WebHistory history;
-    private static org.apache.logging.log4j.Logger log = LogManager.getLogger();
+    private static Logger log = LoggerFactory.getLogger(HelpWindow.class);
 
     @FXML
     private void initialize() {

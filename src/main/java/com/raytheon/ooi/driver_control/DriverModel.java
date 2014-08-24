@@ -8,8 +8,8 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileReader;
@@ -20,7 +20,7 @@ import java.util.*;
 public class DriverModel {
     // static members, including singleton instance
     private final static DriverModel INSTANCE = new DriverModel();
-    private static Logger log = LogManager.getLogger(DriverModel.class);
+    private final static Logger log = LoggerFactory.getLogger(DriverModel.class);
 
     // config is null until loaded
     private DriverConfig config;

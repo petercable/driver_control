@@ -2,8 +2,8 @@ package com.raytheon.ooi.preload;
 
 import com.raytheon.ooi.common.Constants;
 import com.raytheon.ooi.driver_control.DriverModel;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -20,7 +20,7 @@ public class DataStream {
     private final DriverModel model = DriverModel.getInstance();
     private final Map<String, DataParameter> params = new HashMap<>();
 //    private final Map<String, Object> metadata = new HashMap<>();
-    private final static Logger log = LogManager.getLogger(DataStream.class);
+    private final static Logger log = LoggerFactory.getLogger(DataStream.class);
 
     public DataStream(String name) {
         this.name = name;

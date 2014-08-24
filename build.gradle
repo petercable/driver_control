@@ -19,8 +19,9 @@ repositories {
     mavenCentral()
 }
 dependencies {
-    compile group: 'org.apache.logging.log4j', name: 'log4j-api', version:'2.0'
-    compile group: 'org.apache.logging.log4j', name: 'log4j-core', version:'2.0'
+    compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.7'
+    compile group: 'org.slf4j', name: 'slf4j-log4j12', version: '1.7.7'
+    compile group: 'log4j', name: 'log4j', version: '1.2.17'
 
     compile group: 'org.zeromq', name: 'jeromq', version:'0.3.4'
     compile group: 'org.yaml', name: 'snakeyaml', version:'1.13'
@@ -75,7 +76,7 @@ task clone_preload(type:Exec) {
 
 task preload(type:Exec, dependsOn:[clone_preload, makeWorkDir]) {
     workingDir workDir
-    commandLine 'python', parser.toString()
+    commandLine System.getenv('VIRTUAL_ENV') + '/bin/python', parser.toString()
     doLast {
         println 'Generating preload database'
     }
@@ -84,3 +85,4 @@ task preload(type:Exec, dependsOn:[clone_preload, makeWorkDir]) {
 clone_preload.onlyIf { !parser.exists() }
 preload.onlyIf { !db.exists() }
 run.dependsOn([preload, checkEnv])
+clean.dependsOn(cleanWork)

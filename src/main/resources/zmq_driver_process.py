@@ -168,7 +168,7 @@ class ZmqDriverProcess(driver_process.DriverProcess):
                         except Exception as e:
                             log.debug('Exception %s', e)
 
-                    log.error("Reply from driver: %r %s", reply, type(reply))
+                    log.debug("Reply from driver: %r %s", reply, type(reply))
                     # if operation raised exception, encode as triple
                     if isinstance(reply, Exception):
                         reply = _encode_exception(reply)

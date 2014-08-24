@@ -1,7 +1,7 @@
 package com.raytheon.ooi.driver_interface;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 
@@ -13,7 +13,7 @@ public class ZmqDriverInterface extends DriverInterface {
     private final ZMQ.Socket commandSocket;
     private final ZMQ.Socket eventSocket;
     private boolean keepRunning = true;
-    private static Logger log = LogManager.getLogger(ZmqDriverInterface.class);
+    private static Logger log = LoggerFactory.getLogger(ZmqDriverInterface.class);
 
     public ZmqDriverInterface(String host, int commandPort, int eventPort) {
         String commandUrl = String.format("tcp://%s:%d", host, commandPort);

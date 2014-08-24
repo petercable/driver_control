@@ -2,9 +2,10 @@ package com.raytheon.ooi.driver_control;
 
 import com.raytheon.ooi.preload.PreloadDatabase;
 import com.raytheon.ooi.preload.SqlitePreloadDatabase;
-import org.apache.logging.log4j.LogManager;
 import org.apache.poi.util.IOUtils;
 import org.controlsfx.dialog.Dialogs;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.net.URL;
@@ -14,7 +15,7 @@ import java.nio.file.Paths;
 import java.util.*;
 
 public class DriverLauncher {
-    private static final org.apache.logging.log4j.Logger log = LogManager.getLogger();
+    private static final Logger log = LoggerFactory.getLogger(DriverLauncher.class);
 
     private DriverLauncher() {
     }
@@ -98,7 +99,7 @@ public class DriverLauncher {
           assumes we are already in the directory containing the egg to be patched */
         log.debug("Patching zmq_driver to use JSON");
         String[] commands = {
-            String.format("sed -i .bak s/INFO/DEBUG/g %s/res/config/mi-logging.yml", scenarioPath),
+            //String.format("sed -i .bak s/INFO/DEBUG/g %s/res/config/mi-logging.yml", scenarioPath),
             String.format("cp %s/res/config/mi-logging.yml %s/mi/mi-logging.yml", scenarioPath, scenarioPath)
         };
         for (String command: commands) {
@@ -127,7 +128,7 @@ public class DriverLauncher {
         ProcessBuilder pb = new ProcessBuilder(args);
         Map<String, String> environment = pb.environment();
         environment.putAll(getEnv(scenarioPath));
-        log.debug(environment);
+        log.debug(environment.toString());
         pb.directory(new File(scenarioPath));
         return pb.inheritIO().start();
     }
