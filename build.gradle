@@ -4,13 +4,16 @@ apply plugin: 'idea'
 
 group = 'com.raytheon.ooi'
 version = '1.0'
-mainClassName = "com.raytheon.ooi.driver_control.Main"
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
-def parser = new File('lib/preload/parse_preload.py')
-def db = new File('preload.db')
+def parser = new File(projectDir.toString() + '/lib/preload/parse_preload.py')
+def workDir = new File(projectDir.toString() + "/workDir")
+def db = new File(workDir.toString() + '/preload.db')
+
+mainClassName = "com.raytheon.ooi.driver_control.Main"
+applicationDefaultJvmArgs = ['-DworkDir=' + workDir]
 
 repositories {
     mavenCentral()
@@ -40,20 +43,44 @@ jar {
 }
 
 run {
-    if ( project.hasProperty("appArgs") ) {
+    if (project.hasProperty("appArgs"))
         args Eval.me(appArgs)
-    }
+}
+
+task checkEnv << {
+    if (System.getenv("TEST_BASE") == null)
+        throw new Exception('Missing required environment variable TEST_BASE')
+    if (System.getenv("VIRTUAL_ENV") == null)
+        throw new Exception('Missing required environment variable TEST_BASE')
+}
+
+task findMI(type:Exec) {
+    commandLine 'find', System.getenv("HOME"), '-type', 'd', '-name', 'marine_integrations'
+}
+
+task makeWorkDir {
+    mkdir(workDir)
+}
+
+task cleanWork(type:Delete) {
+    delete workDir
 }
 
 task clone_preload(type:Exec) {
-    println 'Cloning submodule preload_parser'
     commandLine 'git', 'submodule', 'update', '--init'
+    doLast {
+        println 'Cloning submodule preload_parser'
+    }
 }
 
-task preload(type:Exec, dependsOn:clone_preload) {
-    println 'Generating preload database'
+task preload(type:Exec, dependsOn:[clone_preload, makeWorkDir]) {
+    workingDir workDir
     commandLine 'python', parser.toString()
+    doLast {
+        println 'Generating preload database'
+    }
 }
 
 clone_preload.onlyIf { !parser.exists() }
 preload.onlyIf { !db.exists() }
+run.dependsOn([preload, checkEnv])

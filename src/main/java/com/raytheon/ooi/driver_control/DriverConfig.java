@@ -10,7 +10,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
-import java.util.StringJoiner;
 
 public class DriverConfig {
     private final static Logger log = LogManager.getLogger(DriverConfig.class);
@@ -19,9 +18,10 @@ public class DriverConfig {
     private String scenario;
 
     private final String host = "localhost";
-    private final String workDir = "/tmp/driver_control";
-    private final String commandPortFile = String.join("/", workDir, "command_port");
-    private final String eventPortFile = String.join("/", workDir, "event_port");
+    private final String workDir = System.getProperty("workDir");
+    private String commandPortFile;
+    private String eventPortFile;
+    private String scenarioDir;
     private final String databaseFile = String.join("/", workDir, "preload.db");
 
     public DriverConfig(File file) throws IOException {
@@ -34,6 +34,10 @@ public class DriverConfig {
         startupConfig = (Map) map.get("startup_config");
         Map driverConfig = (Map) map.get("driver_config");
         scenario = (String) driverConfig.get("scenario");
+
+        scenarioDir = String.join("/", workDir, scenario);
+        commandPortFile = String.join("/", scenarioDir, "command_port");
+        eventPortFile = String.join("/", scenarioDir, "event_port");
     }
 
     public Map getPortAgentConfig() {
@@ -50,17 +54,6 @@ public class DriverConfig {
 
     public String getEventPortFile() {
         return eventPortFile;
-    }
-
-    public String toString() {
-        StringJoiner joiner = new StringJoiner("\n\n");
-        joiner.add("PORT AGENT CONFIG");
-        joiner.add(portAgentConfig.toString());
-        joiner.add("STARTUP CONFIG");
-        joiner.add(startupConfig.toString());
-        joiner.add("COMMAND PORT FILE: " + commandPortFile);
-        joiner.add("EVENT PORT FILE: " + eventPortFile);
-        return joiner.toString();
     }
 
     public String getHost() {
@@ -91,5 +84,9 @@ public class DriverConfig {
 
     public int getEventPort() throws IOException {
         return getPort(eventPortFile);
+    }
+
+    public String getScenarioDir() {
+        return scenarioDir;
     }
 }
