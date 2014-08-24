@@ -29,8 +29,6 @@ import org.apache.logging.log4j.Logger;
 import org.controlsfx.control.action.Action;
 import org.controlsfx.dialog.Dialog;
 import org.controlsfx.dialog.Dialogs;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
 
 import java.io.File;
 import java.io.IOException;
@@ -130,7 +128,7 @@ public class ControlWindow {
                                                 setTextFill(Color.BLACK);
                                                 if (item.parameterType.equals(Constants.PARAMETER_TYPE_FUNCTION)) {
                                                     if (item.getIsDummy())
-                                                        setStyle("-fx-font-weight: bold; -fx-background-color: darkyellow");
+                                                        setStyle("-fx-font-weight: bold; -fx-background-color: khaki");
                                                     else if (item.isFailedValidate())
                                                         setStyle("-fx-font-weight: bold; -fx-background-color: red");
                                                     else
@@ -227,7 +225,7 @@ public class ControlWindow {
         for (Parameter p: model.parameterMetadata.values()) {
             p.setNewValue("");
         }
-        driverInterface.setResource(new JSONObject(values).toString());
+        driverInterface.setResource(values);
     }
 
     public void loadConfig() {
@@ -398,8 +396,10 @@ public class ControlWindow {
     public void getCapabilities() {
         if (! checkController()) return;
         model.setStatus("Getting capabilities...");
-        JSONArray capabilities = driverInterface.getCapabilities();
-        model.parseCapabilities((JSONArray) capabilities.get(0));
+        List capabilities = driverInterface.getCapabilities();
+        Object capes = capabilities.get(0);
+        if (capes instanceof List)
+            model.parseCapabilities((List) capes);
     }
 
     public void getState() {
@@ -411,13 +411,13 @@ public class ControlWindow {
     public void getParams() {
         if (! checkController()) return;
         model.setStatus("Getting parameterMetadata...");
-        model.setParams((JSONObject) driverInterface.getResource("DRIVER_PARAMETER_ALL"));
+        model.setParams(driverInterface.getResource("DRIVER_PARAMETER_ALL"));
     }
 
     public void getMetadata() {
         if (! checkController()) return;
         model.setStatus("Getting metadata...");
-        JSONObject metadata = driverInterface.getMetadata();
+        Map metadata = driverInterface.getMetadata();
         model.parseMetadata(metadata);
     }
 

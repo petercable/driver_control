@@ -27,8 +27,8 @@ public class SqlitePreloadDatabase extends PreloadDatabase {
     }
 
     public void connect() throws Exception {
-        if (!Files.exists(Paths.get(model.getConfig().getTemp())))
-            Files.createDirectory(Paths.get(model.getConfig().getTemp()));
+        if (!Files.exists(Paths.get(model.getConfig().getWorkDir())))
+            Files.createDirectory(Paths.get(model.getConfig().getWorkDir()));
         if (!Files.exists(Paths.get(model.getConfig().getDatabaseFile())))
             createDB();
 
@@ -43,11 +43,11 @@ public class SqlitePreloadDatabase extends PreloadDatabase {
         // do we have parse preload already?  If not, git it
         log.debug("Creating SQLite database with python script");
         String[] args = {};
-        Path preloadDir = Paths.get(model.getConfig().getTemp(), "parse_preload");
+        Path preloadDir = Paths.get(model.getConfig().getWorkDir(), "parse_preload");
         Path preloadDb = Paths.get(preloadDir.toString(), "preload.db");
         if (!Files.exists(preloadDb)) {
             log.debug("Getting parse_preload utility with git");
-            Runtime.getRuntime().exec(git, args, Paths.get(model.getConfig().getTemp()).toFile()).waitFor();
+            Runtime.getRuntime().exec(git, args, Paths.get(model.getConfig().getWorkDir()).toFile()).waitFor();
         }
         // now run it... user must have already pip installed openpyxl and docopt...
         log.debug("Running preload.py");

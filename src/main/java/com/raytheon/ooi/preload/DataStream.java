@@ -89,7 +89,7 @@ public class DataStream {
     public void archive() {
         List<String> names = new ArrayList<>(params.keySet());
         Collections.sort(names);
-        Path outputPath = Paths.get(model.getConfig().getTemp(), model.getConfig().getScenario());
+        Path outputPath = Paths.get(model.getConfig().getWorkDir(), model.getConfig().getScenario());
         Path outputFile = Paths.get(outputPath.toString(), name + ".csv");
         boolean writeHeader = false;
         if (!Files.exists(outputPath))

@@ -24,6 +24,7 @@ import time
 import logging
 import sys
 import uuid
+import json
 
 import zmq
 
@@ -160,6 +161,14 @@ class ZmqDriverProcess(driver_process.DriverProcess):
                     msg = deunicode(msg)
                     log.debug('ZMQ driver process processing message %s', msg)
                     reply = zmq_driver_process.cmd_driver(msg)
+
+                    if type(reply) == str:
+                        try:
+                            reply = json.loads(reply)
+                        except Exception as e:
+                            log.debug('Exception %s', e)
+
+                    log.error("Reply from driver: %r %s", reply, type(reply))
                     # if operation raised exception, encode as triple
                     if isinstance(reply, Exception):
                         reply = _encode_exception(reply)

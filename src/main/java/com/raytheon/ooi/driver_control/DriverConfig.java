@@ -2,7 +2,6 @@ package com.raytheon.ooi.driver_control;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.json.simple.JSONObject;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.File;
@@ -15,35 +14,34 @@ import java.util.StringJoiner;
 
 public class DriverConfig {
     private final static Logger log = LogManager.getLogger(DriverConfig.class);
-    private JSONObject portAgentConfig;
-    private JSONObject startupConfig;
+    private Map portAgentConfig;
+    private Map startupConfig;
     private String scenario;
 
     private final String host = "localhost";
-    private final String temp = "/tmp/driver_control";
-    private final String commandPortFile = String.join("/", temp, "command_port");
-    private final String eventPortFile = String.join("/", temp, "event_port");
-    private final String databaseFile = String.join("/", temp, "preload.db");
+    private final String workDir = "/tmp/driver_control";
+    private final String commandPortFile = String.join("/", workDir, "command_port");
+    private final String eventPortFile = String.join("/", workDir, "event_port");
+    private final String databaseFile = String.join("/", workDir, "preload.db");
 
     public DriverConfig(File file) throws IOException {
         // open the file, parse the config
         Path path = Paths.get(file.toURI());
         Yaml yaml = new Yaml();
         Map map = (Map) yaml.load(Files.newInputStream(path));
-        JSONObject config = new JSONObject(map);
 
-        portAgentConfig = new JSONObject((Map)config.get("port_agent_config"));
-        startupConfig = new JSONObject((Map)config.get("startup_config"));
-        JSONObject driverConfig = new JSONObject((Map)config.get("driver_config"));
+        portAgentConfig = (Map) map.get("port_agent_config");
+        startupConfig = (Map) map.get("startup_config");
+        Map driverConfig = (Map) map.get("driver_config");
         scenario = (String) driverConfig.get("scenario");
     }
 
-    public String getPortAgentConfig() {
-        return portAgentConfig.toString();
+    public Map getPortAgentConfig() {
+        return portAgentConfig;
     }
 
-    public String getStartupConfig() {
-        return startupConfig.toString();
+    public Map getStartupConfig() {
+        return startupConfig;
     }
 
     public String getCommandPortFile() {
@@ -77,8 +75,8 @@ public class DriverConfig {
         return scenario;
     }
 
-    public String getTemp() {
-        return temp;
+    public String getWorkDir() {
+        return workDir;
     }
 
     private int getPort(String filename) throws IOException {

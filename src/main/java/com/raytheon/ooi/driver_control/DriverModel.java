@@ -10,9 +10,6 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.JSONValue;
 
 import java.io.File;
 import java.io.FileReader;
@@ -65,7 +62,7 @@ public class DriverModel {
         return s.toString();
     }
 
-    public String getString(JSONObject object, String key) {
+    public String getString(Map object, String key) {
         if (object.containsKey(key)) {
             Object val = object.get(key);
             return maybeString(val);
@@ -73,13 +70,14 @@ public class DriverModel {
         return "";
     }
 
-    public void parseMetadata(JSONObject metadata) {
+    @SuppressWarnings("unchecked")
+    public void parseMetadata(Map metadata) {
         log.debug("parseMetadata: {}", metadata);
-        JSONObject _commands = (JSONObject) metadata.get("commands");
-        JSONObject _parameters = (JSONObject) metadata.get("parameters");
+        Map<String, Object> _commands = (Map) metadata.get("commands");
+        Map<String, Object> _parameters = (Map) metadata.get("parameters");
         for (Object _name: _commands.keySet()) {
             String name = (String) _name;
-            String displayName = getString((JSONObject)_commands.get(name), "display_name");
+            String displayName = getString((Map)_commands.get(name), "display_name");
             ProtocolCommand command = new ProtocolCommand(name, displayName);
             commandMetadata.put(name, command);
         }
@@ -88,14 +86,17 @@ public class DriverModel {
         // direct_access=false, display_name=Polled Interval, value={default=5, units=s, type=int}}},
         for (Object _name: _parameters.keySet()) {
             String name = (String) _name;
-            JSONObject param = (JSONObject) _parameters.get(name);
+            Map param = (Map) _parameters.get(name);
+            log.debug("Parameter metadata, name = {}, {}", name, param);
             String displayName = getString(param, "display_name");
+            if (displayName.equals(""))
+                displayName = name;
             String visibility = getString(param, "visibility");
             String description = getString(param, "description");
             String startup = getString(param, "startup");
             String directAccess = getString(param, "direct_access");
 
-            JSONObject value = (JSONObject) param.get("value");
+            Map value = (Map) param.get("value");
             String valueDescription = getString(value, "description");
             String valueType = getString(value, "type");
             String units = getString(value, "units");
@@ -107,7 +108,7 @@ public class DriverModel {
         log.debug("Parsed metadata: parameters = {}", parameterMetadata);
     }
 
-    public void parseCapabilities(JSONArray capes) {
+    public void parseCapabilities(List capes) {
         log.debug("parse capabilities, clearing commandList");
         commandList.clear();
         setParamsSettable(false);
@@ -144,11 +145,11 @@ public class DriverModel {
         return state;
     }
 
-    public void setParams(JSONObject params) {
+    public void setParams(Map params) {
         // TODO handle incomplete parameter lists?
         log.debug("setParams, clearing parameterList");
-        paramList.clear();
         if (params != null) {
+            paramList.clear();
             for (Object key : params.keySet()) {
                 String name = (String) key;
                 String value = getString(params, name);
@@ -195,8 +196,7 @@ public class DriverModel {
         for (CSVRecord record: records) {
             try {
                 String name = record.get(1);
-                Object value = record.get(2);
-                value = JSONValue.parse((String)value);
+                String value = record.get(2);
                 log.debug("Found coefficient {} : {}", name, value);
                 coefficients.put(name, value);
             } catch (ArrayIndexOutOfBoundsException ignore) { }

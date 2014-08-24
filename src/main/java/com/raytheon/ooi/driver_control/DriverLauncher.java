@@ -21,10 +21,10 @@ public class DriverLauncher {
 
     public static Process launchDriver(DriverConfig config) throws IOException, InterruptedException {
         PreloadDatabase db = SqlitePreloadDatabase.getInstance();
-        String scenarioPath = String.join("/", config.getTemp(), config.getScenario());
+        String scenarioPath = String.join("/", config.getWorkDir(), config.getScenario());
         String eggUrl = db.getEggUrl(config.getScenario());
         String eggName = eggUrl.substring(eggUrl.lastIndexOf('/') + 1);
-        Path eggPath = Paths.get(config.getTemp(), eggName);
+        Path eggPath = Paths.get(config.getWorkDir(), eggName);
 
         getEgg(eggUrl, eggPath);
         unzipDriver(eggPath.toString(), scenarioPath);

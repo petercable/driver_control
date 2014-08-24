@@ -1,14 +1,11 @@
 package com.raytheon.ooi.preload;
 
 import com.raytheon.ooi.common.Constants;
+import com.raytheon.ooi.common.JsonHelper;
 import com.raytheon.ooi.driver_control.DriverLauncher;
 import com.raytheon.ooi.driver_control.DriverModel;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.JSONValue;
-import org.json.simple.parser.ParseException;
 
 import java.io.BufferedReader;
 import java.io.FileWriter;
@@ -17,8 +14,11 @@ import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.StringJoiner;
+
+import static com.raytheon.ooi.common.JsonHelper.toList;
 
 public class DataParameter {
     private final DriverModel model = DriverModel.getInstance();
@@ -54,12 +54,14 @@ public class DataParameter {
 
     public String toString() {
         String className = "Null";
-        if (value != null)
+        Object thisValue = getValue();
+        if (thisValue != null)
             className = value.getClass().toString();
+
         return String.format("ID: %s NAME: %s VALUE: %s VALUE_CLASS: %s TYPE: %s ENCODING: %s FUNCID: %s FUNCMAP: %s",
                 id,
                 name,
-                getValue(),
+                thisValue,
                 className,
                 parameterType,
                 valueEncoding,
@@ -72,7 +74,11 @@ public class DataParameter {
             // stream not yet defined, we can't calculate squat
             return value;
         if (parameterType.equals(Constants.PARAMETER_TYPE_FUNCTION) && value == null) {
-            value = calculateValue();
+            try {
+                value = calculateValue();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
         return value;
     }
@@ -81,9 +87,9 @@ public class DataParameter {
         this.value = value;
     }
 
-    public Object calculateValue() {
+    public Object calculateValue() throws IOException {
         // decode the function map
-        JSONObject functionMap = (JSONObject) JSONValue.parse(parameterFunctionMap.replace("'", "\""));
+        Map functionMap = JsonHelper.toMap(parameterFunctionMap.replace("'", "\""));
         log.debug("FunctionMap: {}", functionMap);
 
         // build an args map
@@ -113,9 +119,9 @@ public class DataParameter {
         this.stream = stream;
     }
 
-    public static Object applyFunction(DataFunction df, Map<String, Object> args) {
+    public static Object applyFunction(DataFunction df, Map<String, Object> args) throws IOException {
         StringJoiner joiner = new StringJoiner(", ");
-        JSONArray functionArgs = (JSONArray) JSONValue.parse(df.getArgs().replace("'", "\""));
+        List functionArgs = toList(df.getArgs().replace("'", "\""));
         for (int i = 0; i < functionArgs.size(); i++) {
             String argName = (String) functionArgs.get(i);
             log.debug("index: {} argName: {} value: {}", i, argName, args.get(argName));
@@ -173,12 +179,8 @@ public class DataParameter {
                 return 0;
             }
             log.debug("Read from ion_function: {}", line);
-            JSONArray rvalue = null;
-            try {
-                rvalue = (JSONArray) JSONValue.parseWithException(line);
-            } catch (ParseException e) {
-                e.printStackTrace();
-            }
+            List rvalue = toList(line);
+
             log.debug("Parsed result from ion_function: {}", rvalue);
             if (rvalue == null)
                 return 0;
@@ -193,35 +195,39 @@ public class DataParameter {
     }
     
     public void validate() {
-        if (getValue() == null)
+        Object thisValue = getValue();
+        if (thisValue == null)
             log.error("Missing required value from stream: {}", this);
         switch (parameterType) {
             case Constants.PARAMETER_TYPE_QUANTITY:
             case Constants.PARAMETER_TYPE_FUNCTION:
-                validateType(getValue());
+                validateType(thisValue);
                 break;
             case Constants.PARAMETER_TYPE_ARRAY:
-                if (getValue() instanceof String) {
-                    Object array = JSONValue.parse((String) getValue());
-                    if (array instanceof JSONArray) {
+                if (thisValue instanceof String) {
+                    List array = null;
+                    try {
+                        array = toList((String) thisValue);
                         log.debug("YAHOO, found JSONArray: {}", array);
+                    } catch (IOException e) {
+                        e.printStackTrace();
                     }
-                else if (getValue() instanceof Byte[]) {
-                        log.debug("Found byte array: {}", getValue());
-                    }
+
+                }
+                else if (thisValue instanceof Byte[]) {
+                        log.debug("Found byte array: {}", thisValue);
                 } else {
-                    Object value = getValue();
                     Object classType = null;
-                    if (value != null) classType = value.getClass();
+                    if (thisValue != null) classType = thisValue.getClass();
                     log.debug("Found some other sort of object: {} {}", value, classType);
                 }
                 break;
             case Constants.PARAMETER_TYPE_BOOLEAN:
-                if (!(getValue() instanceof Boolean))
-                    log.error("UNEXPECTED VALUE {} for parameter type {} for parameter {}", getValue(), parameterType, name);
+                if (!(thisValue instanceof Boolean))
+                    log.error("UNEXPECTED VALUE {} for parameter type {} for parameter {}", thisValue, parameterType, name);
                 break;
             case Constants.PARAMETER_TYPE_CATEGORY:
-                log.debug("YAHOO, found {}: {}", parameterType, getValue());
+                log.debug("YAHOO, found {}: {}", parameterType, thisValue);
                 break;
             default:
                 log.error("Missing parameterType from switch statement in validate: {}", this);
