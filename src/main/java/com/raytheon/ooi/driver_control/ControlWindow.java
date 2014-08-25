@@ -52,7 +52,6 @@ public class ControlWindow {
     @FXML private TextField statusField;
     @FXML private TextField connectionStatusField;
     @FXML private Button sendParamButton;
-    @FXML private TabPane tabPane;
     @FXML private TabPane sampleTabPane;
 
     private static final Logger log = LoggerFactory.getLogger(ControlWindow.class);
@@ -109,42 +108,40 @@ public class ControlWindow {
                             column.setPrefWidth(key.length() * 10);
                             tableView.getColumns().add(column);
 
-                            column.setCellFactory(c -> {
-                                return new TableCell<DataStream, DataParameter>() {
-                                    @Override
-                                    protected void updateItem(DataParameter item, boolean empty) {
-                                        super.updateItem(item, empty);
+                            column.setCellFactory(c -> new TableCell<DataStream, DataParameter>() {
+                                @Override
+                                protected void updateItem(DataParameter item, boolean empty) {
+                                    super.updateItem(item, empty);
 
-                                        if (item == null || empty) {
-                                            setText(null);
-                                            setStyle("");
+                                    if (item == null || empty) {
+                                        setText(null);
+                                        setStyle("");
+                                    } else {
+                                        Object value = item.getValue();
+                                        if (value == null) {
+                                            setText("not present");
+                                            setStyle("-fx-background-color: yellow");
                                         } else {
-                                            Object value = item.getValue();
-                                            if (value == null) {
-                                                setText("not present");
-                                                setStyle("-fx-background-color: yellow");
+                                            setText(item.getValue().toString());
+                                            setTextFill(Color.BLACK);
+                                            if (item.parameterType.equals(Constants.PARAMETER_TYPE_FUNCTION)) {
+                                                if (item.getIsDummy())
+                                                    setStyle("-fx-font-weight: bold; -fx-background-color: khaki");
+                                                else if (item.isFailedValidate())
+                                                    setStyle("-fx-font-weight: bold; -fx-background-color: red");
+                                                else
+                                                    setStyle("-fx-font-weight: bold; -fx-background-color: lightgrey");
                                             } else {
-                                                setText(item.getValue().toString());
-                                                setTextFill(Color.BLACK);
-                                                if (item.parameterType.equals(Constants.PARAMETER_TYPE_FUNCTION)) {
-                                                    if (item.getIsDummy())
-                                                        setStyle("-fx-font-weight: bold; -fx-background-color: khaki");
-                                                    else if (item.isFailedValidate())
-                                                        setStyle("-fx-font-weight: bold; -fx-background-color: red");
-                                                    else
-                                                        setStyle("-fx-font-weight: bold; -fx-background-color: lightgrey");
-                                                } else {
-                                                    if (item.getIsDummy())
-                                                        setStyle("-fx-background-color: yellow");
-                                                    else if (item.isFailedValidate())
-                                                        setStyle("-fx-background-color: orangered");
-                                                    if (item.isMissing())
-                                                        setTextFill(Color.RED);
-                                                }
+                                                if (item.getIsDummy())
+                                                    setStyle("-fx-background-color: yellow");
+                                                else if (item.isFailedValidate())
+                                                    setStyle("-fx-background-color: orangered");
+                                                if (item.isMissing())
+                                                    setTextFill(Color.RED);
                                             }
                                         }
                                     }
-                                };
+                                }
                             });
                         }
                     }

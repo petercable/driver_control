@@ -1,120 +1,112 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.*?>
 <?import javafx.scene.text.*?>
-<?import java.lang.*?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.control.*?>
 
-<AnchorPane fx:id="root" prefHeight="520.0" prefWidth="813.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.raytheon.ooi.driver_control.ControlWindow">
-    <children>
-        <VBox prefHeight="529.0" prefWidth="813.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-            <children>
-                <MenuBar minHeight="29.0">
-                    <menus>
-                        <Menu text="File">
-                            <items>
-                                <MenuItem onAction="#loadConfig" text="Load Config" />
-                                <MenuItem onAction="#loadCoefficients" text="Load Coefficients" />
-                                <MenuItem onAction="#exit" text="Exit" />
-                            </items>
-                        </Menu>
-                        <Menu text="Driver">
-                            <items>
-                                <MenuItem onAction="#configure" text="Configure" />
-                                <MenuItem onAction="#connect" text="Connect to Instrument" />
-                                <MenuItem onAction="#discover" text="Discover" />
-                                <MenuItem onAction="#shutdownDriver" text="Shutdown" />
-                                <SeparatorMenuItem />
-                                <MenuItem onAction="#getMetadata" text="Get Metadata" />
-                                <MenuItem onAction="#getCapabilities" text="Get Capabilities" />
-                                <MenuItem onAction="#getState" text="Get State" />
-                                <MenuItem onAction="#getParams" text="Get Parameters" />
-                            </items>
-                        </Menu>
-                        <Menu text="Test">
-                            <items>
-                                <MenuItem onAction="#launchDriver" text="Launch Driver" />
-                                <MenuItem onAction="#driverConnect" text="Connect to Driver" />
-                            </items>
-                        </Menu>
-                        <Menu text="Help">
-                            <items>
-                                <MenuItem onAction="#displayTestProcedures" text="Test Procedures" />
-                            </items>
-                        </Menu>
-                    </menus>
-                </MenuBar>
-                <TabPane fx:id="tabPane" minHeight="100.0" minWidth="100.0" tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS">
-                    <tabs>
-                        <Tab text="Commands">
-                            <content>
-                                <TableView fx:id="commandTable" layoutX="14.0" layoutY="14.0" minHeight="100.0" onMouseClicked="#selectCommand" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-                                    <columns>
-                                        <TableColumn fx:id="commandColumn" minWidth="200.0" prefWidth="300.0" text="Command" />
-                                        <TableColumn fx:id="commandNameColumn" minWidth="400.0" prefWidth="-1.0" text="Description" />
-                                    </columns>
-                                </TableView>
-                            </content>
-                        </Tab>
-                        <Tab text="Parameters">
-                            <content>
-                                <VBox>
-                                    <children>
-                                        <TableView fx:id="parameterTable" editable="true" layoutX="14.0" layoutY="14.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" VBox.vgrow="ALWAYS">
-                                            <columns>
-                                                <TableColumn fx:id="parameterNameColumn" editable="false" minWidth="200.0" prefWidth="-1.0" text="Parameter" />
-                                                <TableColumn fx:id="parameterValueColumn" minWidth="20.0" prefWidth="50.0" text="Value" />
-                                                <TableColumn fx:id="parameterUnitsColumn" minWidth="20.0" prefWidth="50.0" text="Units" />
-                                                <TableColumn fx:id="parameterNewValueColumn" minWidth="20.0" prefWidth="50.0" text="New Value" />
-                                                <TableColumn fx:id="parameterValueDescriptionColumn" minWidth="20.0" prefWidth="150.0" text="Value Description" />
-                                                <TableColumn fx:id="parameterVisibility" minWidth="20.0" prefWidth="150.0" text="Value Visibility" />
-                                                <TableColumn fx:id="parameterStartup" minWidth="20.0" prefWidth="150.0" text="Startup" />
-                                                <TableColumn fx:id="parameterDirectAccess" minWidth="20.0" prefWidth="150.0" text="Direct Access" />
-                                            </columns>
-                                        </TableView>
-                                        <HBox alignment="TOP_RIGHT" VBox.vgrow="NEVER">
-                                            <children>
-                                                <Button fx:id="sendParamButton" maxHeight="-Infinity" minHeight="-Infinity" onMouseClicked="#sendParams" prefHeight="26.0" text="Send"  AnchorPane.bottomAnchor="2.0" AnchorPane.rightAnchor="2.0" VBox.vgrow="NEVER" />
-                                            </children>
-                                        </HBox>
-                                    </children>
-                                </VBox>
-                            </content>
-                        </Tab>
-                        <Tab text="Samples">
-                            <content>
-                                <VBox>
-                                    <children>
-                                        <TabPane fx:id="sampleTabPane" minHeight="100.0" minWidth="100.0" prefHeight="401.0" prefWidth="813.0" tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS" />
-                                        <HBox VBox.vgrow="NEVER">
-                                            <children>
-                                                <TextField alignment="CENTER" editable="false" text="Legend:" />
-                                                <TextField alignment="CENTER" editable="false" text="Normal" />
-                                                <TextField alignment="CENTER" editable="false" text="Calculated">
-                                                    <font>
-                                                        <Font name="System Bold" size="13.0" />
-                                                    </font>
-                                                </TextField>
-                                                <TextField alignment="CENTER" editable="false" style="-fx-background-color: orangered;" text="Out of Range" />
-                                                <TextField alignment="CENTER" editable="false" style="-fx-background-color: yellow;" text="Missing Value" />
-                                                <TextField alignment="CENTER" editable="false" style="-fx-text-fill: red;" text="Not in Preload" />
-                                            </children>
-                                        </HBox>
-                                    </children>
-                                </VBox>
-                            </content>
-                        </Tab>
-                    </tabs>
-                </TabPane>
-                <HBox minHeight="26.0">
-                    <children>
-                  <TextField fx:id="connectionStatusField" editable="false" prefWidth="200.0" />
-                        <TextField fx:id="stateField" editable="false" prefWidth="230.0" HBox.hgrow="NEVER" />
-                        <TextField fx:id="statusField" editable="false" GridPane.columnIndex="1" HBox.hgrow="ALWAYS" />
-                    </children>
-                </HBox>
-            </children>
-        </VBox>
-    </children>
+<AnchorPane fx:id="root" prefHeight="520.0" prefWidth="813.0" xmlns="http://javafx.com/javafx/8"
+            xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.raytheon.ooi.driver_control.ControlWindow">
+    <VBox prefHeight="529.0" prefWidth="813.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0"
+          AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+        <MenuBar minHeight="29.0">
+            <Menu text="File">
+                <MenuItem onAction="#loadConfig" text="Load Config"/>
+                <MenuItem onAction="#loadCoefficients" text="Load Coefficients"/>
+                <MenuItem onAction="#exit" text="Exit"/>
+            </Menu>
+            <Menu text="Driver">
+                <MenuItem onAction="#configure" text="Configure"/>
+                <MenuItem onAction="#connect" text="Connect to Instrument"/>
+                <MenuItem onAction="#discover" text="Discover"/>
+                <MenuItem onAction="#shutdownDriver" text="Shutdown"/>
+                <SeparatorMenuItem/>
+                <MenuItem onAction="#getMetadata" text="Get Metadata"/>
+                <MenuItem onAction="#getCapabilities" text="Get Capabilities"/>
+                <MenuItem onAction="#getState" text="Get State"/>
+                <MenuItem onAction="#getParams" text="Get Parameters"/>
+            </Menu>
+            <Menu text="Test">
+                <MenuItem onAction="#launchDriver" text="Launch Driver"/>
+                <MenuItem onAction="#driverConnect" text="Connect to Driver"/>
+            </Menu>
+            <Menu text="Help">
+                <MenuItem onAction="#displayTestProcedures" text="Test Procedures"/>
+            </Menu>
+        </MenuBar>
+        <TabPane fx:id="tabPane" minHeight="100.0" minWidth="100.0" tabClosingPolicy="UNAVAILABLE"
+                 VBox.vgrow="ALWAYS">
+            <Tab text="Commands">
+                <TableView fx:id="commandTable" layoutX="14.0" layoutY="14.0" minHeight="100.0"
+                           onMouseClicked="#selectCommand" AnchorPane.bottomAnchor="0.0"
+                           AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0"
+                           AnchorPane.topAnchor="0.0">
+                    <columns>
+                        <TableColumn fx:id="commandColumn" minWidth="200.0" prefWidth="300.0"
+                                     text="Command"/>
+                        <TableColumn fx:id="commandNameColumn" minWidth="400.0" prefWidth="-1.0"
+                                     text="Description"/>
+                    </columns>
+                </TableView>
+            </Tab>
+            <Tab text="Parameters">
+                <VBox>
+                    <TableView fx:id="parameterTable" editable="true" layoutX="14.0" layoutY="14.0"
+                               AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0"
+                               AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0"
+                               VBox.vgrow="ALWAYS">
+                        <columns>
+                            <TableColumn fx:id="parameterNameColumn" editable="false" minWidth="200.0"
+                                         prefWidth="-1.0" text="Parameter"/>
+                            <TableColumn fx:id="parameterValueColumn" minWidth="20.0" prefWidth="50.0"
+                                         text="Value"/>
+                            <TableColumn fx:id="parameterUnitsColumn" minWidth="20.0" prefWidth="50.0"
+                                         text="Units"/>
+                            <TableColumn fx:id="parameterNewValueColumn" minWidth="20.0"
+                                         prefWidth="50.0" text="New Value"/>
+                            <TableColumn fx:id="parameterValueDescriptionColumn" minWidth="20.0"
+                                         prefWidth="150.0" text="Value Description"/>
+                            <TableColumn fx:id="parameterVisibility" minWidth="20.0" prefWidth="150.0"
+                                         text="Value Visibility"/>
+                            <TableColumn fx:id="parameterStartup" minWidth="20.0" prefWidth="150.0"
+                                         text="Startup"/>
+                            <TableColumn fx:id="parameterDirectAccess" minWidth="20.0" prefWidth="150.0"
+                                         text="Direct Access"/>
+                        </columns>
+                    </TableView>
+                    <HBox alignment="TOP_RIGHT" VBox.vgrow="NEVER">
+                        <Button fx:id="sendParamButton" maxHeight="-Infinity" minHeight="-Infinity"
+                                onMouseClicked="#sendParams" prefHeight="26.0" text="Send"
+                                AnchorPane.bottomAnchor="2.0" AnchorPane.rightAnchor="2.0"
+                                VBox.vgrow="NEVER"/>
+                    </HBox>
+                </VBox>
+            </Tab>
+            <Tab text="Samples">
+                <VBox>
+                    <TabPane fx:id="sampleTabPane" minHeight="100.0" minWidth="100.0" prefHeight="401.0"
+                             prefWidth="813.0" tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS"/>
+                    <HBox VBox.vgrow="NEVER">
+                        <TextField alignment="CENTER" editable="false" text="Legend:"/>
+                        <TextField alignment="CENTER" editable="false" text="Normal"/>
+                        <TextField alignment="CENTER" editable="false" text="Calculated">
+                            <font>
+                                <Font name="System Bold" size="13.0"/>
+                            </font>
+                        </TextField>
+                        <TextField alignment="CENTER" editable="false"
+                                   style="-fx-background-color: orangered;" text="Out of Range"/>
+                        <TextField alignment="CENTER" editable="false"
+                                   style="-fx-background-color: yellow;" text="Missing Value"/>
+                        <TextField alignment="CENTER" editable="false" style="-fx-text-fill: red;"
+                                   text="Not in Preload"/>
+                    </HBox>
+                </VBox>
+            </Tab>
+        </TabPane>
+        <HBox minHeight="26.0">
+            <TextField fx:id="connectionStatusField" editable="false" prefWidth="200.0"/>
+            <TextField fx:id="stateField" editable="false" prefWidth="230.0" HBox.hgrow="NEVER"/>
+            <TextField fx:id="statusField" editable="false" GridPane.columnIndex="1" HBox.hgrow="ALWAYS"/>
+        </HBox>
+    </VBox>
 </AnchorPane>

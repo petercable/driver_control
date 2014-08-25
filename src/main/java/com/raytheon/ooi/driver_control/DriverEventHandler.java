@@ -27,9 +27,7 @@ public class DriverEventHandler implements Observer {
             Map event = JsonHelper.toMap((String) arg);
             switch ((String)event.get("type")) {
                 case Constants.STATE_CHANGE_EVENT:
-                    Platform.runLater(()-> {
-                        model.setState((String)event.get("value"));
-                    });
+                    Platform.runLater(()-> model.setState((String)event.get("value")));
                     break;
                 case Constants.SAMPLE_EVENT:
                     try {

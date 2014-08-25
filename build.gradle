@@ -60,7 +60,7 @@ task findMI(type:Exec) {
     commandLine 'find', System.getenv("HOME"), '-type', 'd', '-name', 'marine_integrations'
 }
 
-task makeWorkDir {
+task makeWorkDir << {
     mkdir(workDir)
 }
 
@@ -77,7 +77,7 @@ task clone_preload(type:Exec) {
 
 task preload(type:Exec, dependsOn:[clone_preload, makeWorkDir]) {
     workingDir workDir
-    commandLine System.getenv('VIRTUAL_ENV') + '/bin/python', parser.toString()
+    commandLine 'python', parser.toString()
     doLast {
         println 'Generating preload database'
     }

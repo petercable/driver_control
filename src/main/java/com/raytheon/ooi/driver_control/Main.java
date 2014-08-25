@@ -5,14 +5,11 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.nio.file.Paths;
 
 public class Main extends Application {
-    Logger log = LoggerFactory.getLogger(Main.class);
     private ControlWindow controlWindow;
 
     @Override

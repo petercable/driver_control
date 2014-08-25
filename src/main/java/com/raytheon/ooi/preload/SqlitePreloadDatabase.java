@@ -15,9 +15,6 @@ public class SqlitePreloadDatabase extends PreloadDatabase {
     private final static SqlitePreloadDatabase INSTANCE = new SqlitePreloadDatabase();
     private SqlitePreloadDatabase() {}
 
-    private static final String git = "git clone https://github.com/petercable/parse_preload.git";
-    private static final String parse = "parse_preload.py";
-    
     public static SqlitePreloadDatabase getInstance() {
         return INSTANCE;
     }
