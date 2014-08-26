@@ -147,8 +147,9 @@ public class DataParameter {
                 // rather than one record at a time.
                 if (value instanceof String) {
                     valueString = (String) value;
-                    if (!valueString.startsWith("[")) value = "['" + value + "']";
-                } else {
+                    if (!valueString.startsWith("["))
+                        value = "['" + value + "']";
+                } else if (!(value instanceof List)) {
                     value = String.format("[%s]", value);
                 }
                 writer.append(String.format("%s = numpy.array(%s)\n", key, value));
