@@ -11,6 +11,7 @@ import java.io.BufferedReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -238,8 +239,8 @@ public class DataParameter {
         
     public void validateType(Object thisValue) {
         if (thisValue == null) return;
-        Long longValue;
-        Double doubleValue;
+        Long longValue = 0l;
+        Double doubleValue = 0.0;
         boolean badLong = false;
         if (thisValue instanceof Integer) {
             longValue = ((Integer) thisValue).longValue();
@@ -249,29 +250,30 @@ public class DataParameter {
             doubleValue = ((Long) thisValue).doubleValue();
         } else if (thisValue instanceof Double) {
             doubleValue = (Double) thisValue;
-            longValue = 0l;
+            badLong = true;
+        } else if (thisValue instanceof BigInteger) {
             badLong = true;
         } else {
-            log.debug("Non-numeric type for this parameter: {}", this.toString());
+            log.debug("Non-numeric type for this parameter: {} {}", this, thisValue);
             return;
         }
 
         switch (valueEncoding) {
             // INTS
             case Constants.VALUE_TYPE_INT8:
-                if (longValue > Byte.MAX_VALUE || longValue < Byte.MIN_VALUE || badLong)
+                if (badLong || longValue > Byte.MAX_VALUE || longValue < Byte.MIN_VALUE)
                     failedValidate = true;
                 break;
             case Constants.VALUE_TYPE_INT16:
-                if (longValue > Short.MAX_VALUE || longValue < Short.MIN_VALUE || badLong)
+                if (badLong || longValue > Short.MAX_VALUE || longValue < Short.MIN_VALUE)
                     failedValidate = true;
                 break;
             case Constants.VALUE_TYPE_INT32:
-                if (longValue > Integer.MAX_VALUE || longValue < Integer.MIN_VALUE || badLong)
+                if (badLong ||longValue > Integer.MAX_VALUE || longValue < Integer.MIN_VALUE)
                     failedValidate = true;
                 break;
             case Constants.VALUE_TYPE_INT64:
-                if (longValue > Long.MAX_VALUE || longValue < Long.MIN_VALUE || badLong)
+                if (badLong || longValue > Long.MAX_VALUE || longValue < Long.MIN_VALUE )
                     failedValidate = true;
                 break;
             // FLOATS
@@ -285,24 +287,37 @@ public class DataParameter {
                 break;
             // UINTS
             case Constants.VALUE_TYPE_UINT8:
-                if (longValue > (Byte.MAX_VALUE*2) || longValue < (Byte.MIN_VALUE*2) || badLong)
+                if (badLong || longValue > (Byte.MAX_VALUE*2+1) || longValue < 0)
                     failedValidate = true;
                 break;
             case Constants.VALUE_TYPE_UINT16:
-                if (longValue > (Short.MAX_VALUE*2) || longValue < (Short.MIN_VALUE*2) || badLong)
+                if (badLong || longValue > (Short.MAX_VALUE*2+1) || longValue < 0)
                     failedValidate = true;
                 break;
             case Constants.VALUE_TYPE_UINT32:
-                if (longValue > (Long.MAX_VALUE) || longValue < Long.MIN_VALUE || badLong)
+                // TODO -- is MAX UINT32 Long.MAX_VALUE + 1??
+                if (badLong || longValue < 0)
                     failedValidate = true;
                 break;
             case Constants.VALUE_TYPE_UINT64:
-                // TODO || (Integer) value < Byte.MIN_VALUE)
-                // TODO what are big ints going to look like when they get here?
-//                BigInteger int1 = new BigInteger((String)thisValue);
-//                if(int1.compareTo(BigInteger.valueOf(Long.MAX_VALUE).multiply(BigInteger.valueOf(2))) == 1){
-//                    failedValidate = true;
-//                }
+                BigInteger big;
+                if (value instanceof Double) {
+                    failedValidate = true;
+                    break;
+                } else if (value instanceof Integer) {
+                    big = BigInteger.valueOf(((Integer) value).longValue());
+                } else if (value instanceof Long) {
+                    big = BigInteger.valueOf((Long)value);
+                } else if (value instanceof BigInteger) {
+                    big = (BigInteger) value;
+                } else {
+                    failedValidate = true;
+                    break;
+                }
+
+                BigInteger tooBig = BigInteger.valueOf(Long.MAX_VALUE).multiply(BigInteger.valueOf(2l)).add(BigInteger.ONE);
+                if (big.compareTo(tooBig) == 1 || big.compareTo(BigInteger.ZERO) == -1)
+                    failedValidate = true;
                 break;
             default:
                 failedValidate = true;
