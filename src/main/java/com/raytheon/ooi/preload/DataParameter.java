@@ -7,13 +7,11 @@ import com.raytheon.ooi.driver_control.DriverModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +30,7 @@ public class DataParameter {
     public final String valueEncoding;
     public final String parameterFunctionId;
     public final String parameterFunctionMap;
+    private Path functionDir;
 
     private Object value;
     private DataStream stream;
@@ -47,6 +46,14 @@ public class DataParameter {
         this.valueEncoding = valueEncoding;
         this.parameterFunctionId = parameterFunctionId;
         this.parameterFunctionMap = parameterFunctionMap;
+
+        functionDir = Paths.get(model.getConfig().getScenarioDir(), "functions");
+        if (!Files.isDirectory(functionDir))
+            try {
+                Files.createDirectory(functionDir);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
     }
 
     public boolean getIsDummy() {
@@ -120,7 +127,7 @@ public class DataParameter {
         this.stream = stream;
     }
 
-    public static Object applyFunction(DataFunction df, Map<String, Object> args) throws IOException {
+    public Object applyFunction(DataFunction df, Map<String, Object> args) throws IOException {
         StringJoiner joiner = new StringJoiner(", ");
         List functionArgs = toList(df.getArgs().replace("'", "\""));
         for (int i = 0; i < functionArgs.size(); i++) {
@@ -130,7 +137,8 @@ public class DataParameter {
         }
 
         try {
-            Path ion_function = Files.createTempFile("ion_function", ".py");
+
+            Path ion_function = Files.createTempFile(functionDir, String.format("ion_function_%s_", df.getFunction()), ".py");
             FileWriter writer = new FileWriter(ion_function.toFile());
             // import numpy
             writer.append("import numpy\n");
