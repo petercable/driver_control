@@ -26,7 +26,10 @@ public class JsonHelper {
     }
 
     public static List toList(String json) throws IOException {
-        return mapper.readValue(json, List.class);
+        JsonNode node = mapper.readTree(json);
+        if (node.isArray())
+            return mapper.readValue(json, List.class);
+        return null;
     }
 
     public static Object toObject(String json) throws IOException {

@@ -208,9 +208,10 @@ public class DataParameter {
                     List array = null;
                     try {
                         array = toList((String) thisValue);
-                        log.debug("YAHOO, found JSONArray: {}", array);
-                    } catch (IOException e) {
-                        e.printStackTrace();
+                        if (array != null)
+                            log.debug("YAHOO, found JSONArray: {}", array);
+                    } catch (IOException ignored) {
+                        log.error("Found bare string in array field: {}", thisValue);
                     }
 
                 }

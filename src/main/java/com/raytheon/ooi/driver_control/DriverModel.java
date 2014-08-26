@@ -17,6 +17,8 @@ import java.io.IOException;
 import java.io.Reader;
 import java.util.*;
 
+import static com.raytheon.ooi.common.JsonHelper.toMap;
+
 public class DriverModel {
     // static members, including singleton instance
     private final static DriverModel INSTANCE = new DriverModel();
@@ -197,8 +199,9 @@ public class DriverModel {
             try {
                 String name = record.get(1);
                 String value = record.get(2);
-                log.debug("Found coefficient {} : {}", name, value);
-                coefficients.put(name, value);
+                Object val = toMap(String.format("{\"value\": %s}", value)).get("value");
+                log.debug("Found coefficient {} : {}", name, val);
+                coefficients.put(name, val);
             } catch (ArrayIndexOutOfBoundsException ignore) { }
         }
     }

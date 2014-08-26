@@ -273,6 +273,7 @@ public class ControlWindow {
             try {
                 model.updateCoefficients(file);
             } catch (IOException e) {
+                log.debug("Exception: {}", e.toString());
                 Dialogs.create()
                         .owner(null)
                         .title("Coefficient parse error")
