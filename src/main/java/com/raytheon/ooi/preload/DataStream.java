@@ -133,4 +133,8 @@ public class DataStream {
             e.printStackTrace();
         }
     }
+
+    public String getName() {
+        return name;
+    }
 }
