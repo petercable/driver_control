@@ -64,6 +64,7 @@ public class DriverLauncher {
         StringJoiner joiner = new StringJoiner(":");
         for (String egg: eggs) joiner.add(String.format("%s/eggs/%s", workingPath, egg));
         for (String extern: externs) joiner.add(String.format("%s/extern/%s", workingPath, extern));
+        joiner.add(String.format("%s/interface", workingPath));
 
         String path = String.format("%s/bin:%s", System.getenv("VIRTUAL_ENV"), System.getenv("PATH"));
         String pythonPath = String.format("%s:%s", scenarioPath, joiner.toString());
