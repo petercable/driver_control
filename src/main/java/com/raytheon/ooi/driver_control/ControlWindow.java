@@ -61,7 +61,7 @@ public class ControlWindow {
 
     private final DriverModel model = DriverModel.getInstance();
     private final PreloadDatabase preload = SqlitePreloadDatabase.getInstance();
-    private final DriverEventHandler eventHandler = new DriverEventHandler();
+    private DriverEventHandler eventHandler = null;
 
     private int DEFAULT_TIMEOUT = 60000;
 
@@ -308,6 +308,8 @@ public class ControlWindow {
             events = new ZmqDriverEventInterface(
                     config.getHost(),
                     config.getEventPort());
+            if (eventHandler == null)
+                eventHandler = new DriverEventHandler(config.getScenario());
             events.addObserver(eventHandler);
             commands = new RestDriverCommandInterface(config.getScenario(),
                                                       config.getUframe_agent_url(),
@@ -316,6 +318,7 @@ public class ControlWindow {
                                                       config.getHost(),
                                                       config.getCommandPort(),
                                                       config.getEventPort());
+
             model.setStatus("Connecting to driver...complete");
         } catch (Exception e) {
             e.printStackTrace();
@@ -325,7 +328,6 @@ public class ControlWindow {
                     .message("Exception occurred when attempting to connect to the protocol driver.")
                     .showException(e);
             model.setStatus("Connecting to driver...failed");
-            return;
         }
     }
 
@@ -416,6 +418,8 @@ public class ControlWindow {
         if (! checkController()) return;
         commands.deleteAgent();
         events.shutdown();
+        events.deleteObserver(eventHandler);
+        eventHandler = null;
     }
 
     public void displayTestProcedures() {

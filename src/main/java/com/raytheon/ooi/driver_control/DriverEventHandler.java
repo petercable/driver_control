@@ -19,12 +19,11 @@ public class DriverEventHandler implements Observer {
 
     private final DriverModel model = DriverModel.getInstance();
     private final static Logger log = LoggerFactory.getLogger(DriverEventHandler.class);
-    private final static String edexYaml = "/tmp/edex.yaml";
     private FileWriter edexWriter;
 
-    public DriverEventHandler() {
+    public DriverEventHandler(String sensor) {
         try {
-            edexWriter = new FileWriter(edexYaml, false);
+            edexWriter = new FileWriter("edex_" + sensor + ".json", false);
         }
         catch (IOException e) {
             e.printStackTrace();
@@ -42,20 +41,16 @@ public class DriverEventHandler implements Observer {
                     break;
                 case Constants.SAMPLE_EVENT:
                     try {
-                        String eventString = (String)event.get("value");
-                        Map myParticle = JsonHelper.toMap(eventString);
-                        Yaml yaml = new Yaml();
-
-                        String thing = yaml.dump(myParticle);
-                        log.info("Dumping yaml looking like this:...\n" + thing);
-                        if (! myParticle.get("stream_name").equals("raw")) {
-                            log.info("dumping yaml to file");
-                            yaml.dump(myParticle, edexWriter);
-                            edexWriter.write("\n");
+                        String particleString = (String)event.get("value");
+                        Map<String, Object> particle = JsonHelper.toMap(particleString);
+                        log.info("Dumping json looking like this: " + particleString);
+                        if (! particle.get("stream_name").equals("raw")) {
+                            log.info("dumping json to file");
+                            edexWriter.write(particleString + "\n\n");
                             edexWriter.flush();
                         }
 
-                        final DataStream sample = DriverSampleFactory.parseSample(eventString);
+                        final DataStream sample = DriverSampleFactory.parseSample(particleString);
                         log.info("Received SAMPLE event: " + sample);
                         Platform.runLater(()->model.publishSample(sample));
                     } catch (IOException e) {
@@ -63,7 +58,7 @@ public class DriverEventHandler implements Observer {
                     }
                     break;
                 case Constants.CONFIG_CHANGE_EVENT:
-                    Platform.runLater(()->model.setParams((Map)event.get("value")));
+                    Platform.runLater(()->model.setParams((Map) event.get("value")));
                     break;
             }
         } catch (IOException e) {
