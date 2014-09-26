@@ -1,8 +1,8 @@
 package com.raytheon.ooi.driver_control;
 
 import com.raytheon.ooi.common.Constants;
-import com.raytheon.ooi.driver_interface.DriverInterface;
-import com.raytheon.ooi.driver_interface.ZmqDriverInterface;
+import com.raytheon.ooi.driver_interface.RestDriverCommandInterface;
+import com.raytheon.ooi.driver_interface.ZmqDriverEventInterface;
 import com.raytheon.ooi.preload.DataParameter;
 import com.raytheon.ooi.preload.DataStream;
 import com.raytheon.ooi.preload.PreloadDatabase;
@@ -56,11 +56,14 @@ public class ControlWindow {
 
     private static final Logger log = LoggerFactory.getLogger(ControlWindow.class);
     protected Process driverProcess = null;
-    protected DriverInterface driverInterface = null;
+    protected ZmqDriverEventInterface events = null;
+    protected RestDriverCommandInterface commands = null;
 
     private final DriverModel model = DriverModel.getInstance();
     private final PreloadDatabase preload = SqlitePreloadDatabase.getInstance();
     private final DriverEventHandler eventHandler = new DriverEventHandler();
+
+    private int DEFAULT_TIMEOUT = 60000;
 
     private ChangeListener<Boolean> settableListener = new ChangeListener<Boolean>() {
         @Override
@@ -180,7 +183,7 @@ public class ControlWindow {
         this.model.getConnectionProperty().addListener(connectionChangeListener);
     }
 
-    public void selectCommand(MouseEvent event) {
+    public void selectCommand(MouseEvent event) throws IOException {
         if (! checkController()) return;
             TableView source = (TableView) event.getSource();
             int row = source.getSelectionModel().getSelectedIndex();
@@ -189,13 +192,13 @@ public class ControlWindow {
                 log.debug("Clicked: {}, {}", command, command.getName());
                 model.commandList.clear();
                 new Thread(()-> {
-                    driverInterface.execute(command.getName());
+                    commands.execute(command.getName(), "{}", DEFAULT_TIMEOUT);
                     Platform.runLater(this::getCapabilities);
                 }).start();
             }
     }
 
-    public void sendParams() {
+    public void sendParams() throws IOException {
         if (! checkController()) return;
         log.debug("clicked send params");
         Map<String, Object> values = new HashMap<>();
@@ -222,7 +225,7 @@ public class ControlWindow {
         for (Parameter p: model.parameterMetadata.values()) {
             p.setNewValue("");
         }
-        driverInterface.setResource(values);
+        commands.setResource(values, DEFAULT_TIMEOUT);
     }
 
     public void loadConfig() {
@@ -297,24 +300,22 @@ public class ControlWindow {
         }
     }
 
-
-    public void launchDriver() throws IOException, InterruptedException {
-        if (driverProcess != null) {
-            shutdownDriver();
-            driverProcess.destroy();
-        }
-        driverProcess = DriverLauncher.launchDriver(model.getConfig());
-    }
-
-    public void driverConnect() {
+    public void driverConnect() throws IOException {
         // create model and controllers
         model.setStatus("Connecting to driver...");
         try {
-            driverInterface = new ZmqDriverInterface(
-                    model.getConfig().getHost(),
-                    model.getConfig().getCommandPort(),
-                    model.getConfig().getEventPort());
-            driverInterface.addObserver(eventHandler);
+            DriverConfig config = model.getConfig();
+            events = new ZmqDriverEventInterface(
+                    config.getHost(),
+                    config.getEventPort());
+            events.addObserver(eventHandler);
+            commands = new RestDriverCommandInterface(config.getScenario(),
+                                                      config.getUframe_agent_url(),
+                                                      config.getModule(),
+                                                      config.getKlass(),
+                                                      config.getHost(),
+                                                      config.getCommandPort(),
+                                                      config.getEventPort());
             model.setStatus("Connecting to driver...complete");
         } catch (Exception e) {
             e.printStackTrace();
@@ -326,24 +327,10 @@ public class ControlWindow {
             model.setStatus("Connecting to driver...failed");
             return;
         }
-        getMetadata();
-        updateProtocolState();
-        switch (model.getState()) {
-            case Constants.DRIVER_STATE_UNCONFIGURED:
-                configure();
-            case Constants.DRIVER_STATE_DISCONNECTED:
-                connect();
-            case Constants.DRIVER_STATE_UNKNOWN:
-                discover();
-            default:
-                getParams();
-                updateProtocolState();
-                break;
-        }
     }
 
     private boolean checkController() {
-        if (driverInterface == null) {
+        if (commands == null) {
             Action response = Dialogs.create()
                     .owner(null)
                     .title("")
@@ -351,89 +338,84 @@ public class ControlWindow {
                     .actions(Dialog.Actions.YES, Dialog.Actions.NO)
                     .showConfirm();
             if (response == Dialog.Actions.YES) {
-                this.driverConnect();
+                try {
+                    this.driverConnect();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    return false;
+                }
             }
         }
-        return (driverInterface != null && driverInterface.isConnected());
+        return (commands != null && events != null);
     }
 
-    private void updateProtocolState() {
-        model.setState(driverInterface.getProtocolState());
+    private void updateProtocolState() throws IOException {
+        model.setState(commands.state());
         log.debug("Protocol state in model set to: {}", model.getStatus());
     }
 
-    public void configure() {
+    @SuppressWarnings("unchecked")
+    public void configure() throws IOException {
     if (! checkController()) return;
-        updateProtocolState();
-        String status;
-        if (Objects.equals(model.getState(), Constants.DRIVER_STATE_UNCONFIGURED)) {
-            model.setStatus("Configuring driver...");
-            driverInterface.configurePortAgent(model.getConfig().getPortAgentConfig());
-            driverInterface.initParams(model.getConfig().getStartupConfig());
-            status = "Configuration complete.";
-            updateProtocolState();
-        }
-        else {
-            status = "Configuration already complete.";
-        }
-        model.setStatus(status);
-        log.debug(status);
+        model.setStatus("Configuring driver...");
+        commands.configure(model.getConfig().getPortAgentConfig());
+        //commands.initialize(model.getConfig().getStartupConfig());
     }
 
-    public void connect() {
+    public void connect() throws IOException {
         if (! checkController()) return;
+        model.setStatus("Connecting to instrument...");
+        commands.connect(DEFAULT_TIMEOUT);
+        model.setStatus("Connecting to instrument...done");
         updateProtocolState();
-        if (Objects.equals(model.getState(), Constants.DRIVER_STATE_DISCONNECTED)) {
-            model.setStatus("Connecting to instrument...");
-            driverInterface.connect();
-            model.setStatus("Connecting to instrument...done");
-            updateProtocolState();
-        }
     }
 
     public void getCapabilities() {
         if (! checkController()) return;
         model.setStatus("Getting capabilities...");
-        List capabilities = driverInterface.getCapabilities();
-        Object capes = capabilities.get(0);
-        if (capes instanceof List)
-            model.parseCapabilities((List) capes);
+        try {
+            List capabilities = commands.capabilities();
+            Object capes = capabilities.get(0);
+            if (capes instanceof List)
+                model.parseCapabilities((List) capes);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
-    public void getState() {
+    public void getState() throws IOException {
         if (! checkController()) return;
         model.setStatus("Getting protocol state...");
         updateProtocolState();
     }
 
-    public void getParams() {
+    public void getParams() throws IOException {
         if (! checkController()) return;
         model.setStatus("Getting parameterMetadata...");
-        model.setParams(driverInterface.getResource("DRIVER_PARAMETER_ALL"));
+        Map<String, Object> reply = commands.getResource(null, DEFAULT_TIMEOUT);
+        model.setParams(reply);
     }
 
-    public void getMetadata() {
+    public void getMetadata() throws IOException {
         if (! checkController()) return;
         model.setStatus("Getting metadata...");
-        Map metadata = driverInterface.getMetadata();
+        Map metadata = commands.metadata();
         model.parseMetadata(metadata);
     }
 
-    public void discover() {
+    public void discover() throws IOException {
         updateProtocolState();
-        if (Objects.equals(model.getState(), Constants.DRIVER_STATE_UNKNOWN)) {
-            model.setStatus("Discovering protocol state...");
-            driverInterface.discoverState();
-            model.setStatus("Discovering protocol state...done");
-            updateProtocolState();
-            getCapabilities();
-        }
+        model.setStatus("Discovering protocol state...");
+        commands.discover(DEFAULT_TIMEOUT);
+        model.setStatus("Discovering protocol state...done");
+        updateProtocolState();
+        getCapabilities();
     }
 
     public void shutdownDriver() {
         if (! checkController()) return;
-        driverInterface.stopDriver();
-        driverInterface.shutdown();
+        commands.deleteAgent();
+        events.shutdown();
     }
 
     public void displayTestProcedures() {

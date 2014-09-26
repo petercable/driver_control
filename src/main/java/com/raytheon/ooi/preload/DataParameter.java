@@ -2,7 +2,6 @@ package com.raytheon.ooi.preload;
 
 import com.raytheon.ooi.common.Constants;
 import com.raytheon.ooi.common.JsonHelper;
-import com.raytheon.ooi.driver_control.DriverLauncher;
 import com.raytheon.ooi.driver_control.DriverModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -174,7 +173,6 @@ public class DataParameter {
 
             ProcessBuilder pb = new ProcessBuilder(command);
             Map<String, String> environment = pb.environment();
-            environment.putAll(DriverLauncher.getEnv("."));
 
             Process p = pb.start();
             p.waitFor();

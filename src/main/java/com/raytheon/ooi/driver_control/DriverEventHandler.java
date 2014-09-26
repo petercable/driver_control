@@ -6,7 +6,9 @@ import com.raytheon.ooi.preload.DataStream;
 import javafx.application.Platform;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.yaml.snakeyaml.Yaml;
 
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Observable;
@@ -17,8 +19,17 @@ public class DriverEventHandler implements Observer {
 
     private final DriverModel model = DriverModel.getInstance();
     private final static Logger log = LoggerFactory.getLogger(DriverEventHandler.class);
+    private final static String edexYaml = "/tmp/edex.yaml";
+    private FileWriter edexWriter;
 
-    public DriverEventHandler() {}
+    public DriverEventHandler() {
+        try {
+            edexWriter = new FileWriter(edexYaml, false);
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
     @Override
     public void update(Observable o, Object arg) {
@@ -31,7 +42,20 @@ public class DriverEventHandler implements Observer {
                     break;
                 case Constants.SAMPLE_EVENT:
                     try {
-                        final DataStream sample = DriverSampleFactory.parseSample((String) event.get("value"));
+                        String eventString = (String)event.get("value");
+                        Map myParticle = JsonHelper.toMap(eventString);
+                        Yaml yaml = new Yaml();
+
+                        String thing = yaml.dump(myParticle);
+                        log.info("Dumping yaml looking like this:...\n" + thing);
+                        if (! myParticle.get("stream_name").equals("raw")) {
+                            log.info("dumping yaml to file");
+                            yaml.dump(myParticle, edexWriter);
+                            edexWriter.write("\n");
+                            edexWriter.flush();
+                        }
+
+                        final DataStream sample = DriverSampleFactory.parseSample(eventString);
                         log.info("Received SAMPLE event: " + sample);
                         Platform.runLater(()->model.publishSample(sample));
                     } catch (IOException e) {

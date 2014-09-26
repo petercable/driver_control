@@ -5,26 +5,24 @@ import org.slf4j.LoggerFactory;
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 
+import java.util.List;
+import java.util.Observable;
+
 /**
  * Concrete implementation of the Instrument Driver interface for ZMQ
  */
 
-public class ZmqDriverInterface extends DriverInterface {
-    private final ZMQ.Socket commandSocket;
+public class ZmqDriverEventInterface extends Observable {
     private final ZMQ.Socket eventSocket;
     private boolean keepRunning = true;
-    private static Logger log = LoggerFactory.getLogger(ZmqDriverInterface.class);
+    private static Logger log = LoggerFactory.getLogger(ZmqDriverEventInterface.class);
+    protected boolean connected = false;
 
-    public ZmqDriverInterface(String host, int commandPort, int eventPort) {
-        String commandUrl = String.format("tcp://%s:%d", host, commandPort);
+    public ZmqDriverEventInterface(String host, int eventPort) {
         String eventUrl = String.format("tcp://%s:%d", host, eventPort);
         
         log.debug("Initialize ZmqDriverInterface");
         ZContext context = new ZContext();
-        
-        log.debug("Connecting to command port: {}", commandUrl);
-        commandSocket = context.createSocket(ZMQ.REQ);
-        commandSocket.connect(commandUrl);
 
         log.debug("Connecting to event port: {}", eventUrl);
         eventSocket = context.createSocket(ZMQ.SUB);
@@ -36,15 +34,6 @@ public class ZmqDriverInterface extends DriverInterface {
         t.setName("Event Loop");
         t.start();
         connected = true;
-    }
-
-    protected String _sendCommand(String command, int timeout) {
-        commandSocket.send(command);
-        commandSocket.setReceiveTimeOut(timeout * 1000);
-        String reply = commandSocket.recvStr();
-        if (reply == null)
-            log.debug("Empty message received from command: {}", command);
-        return reply;
     }
 
     protected void eventLoop() {
@@ -74,7 +63,11 @@ public class ZmqDriverInterface extends DriverInterface {
     public void shutdown() {
         keepRunning = false;
         eventSocket.close();
-        commandSocket.close();
         connected = false;
+    }
+
+    public void handleException(List exception) {
+        // TODO
+        log.error("handleException: {}", exception);
     }
 }

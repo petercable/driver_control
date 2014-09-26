@@ -1,5 +1,7 @@
 package com.raytheon.ooi.driver_control;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.File;
@@ -10,13 +12,19 @@ import java.nio.file.Paths;
 import java.util.Map;
 
 public class DriverConfig {
+    private static final Logger log = LoggerFactory.getLogger(ControlWindow.class);
+
     private Map portAgentConfig;
     private Map startupConfig;
     private String scenario;
+    private String module;
+    private String klass;
+    private String host;
+    private String uframe_agent_url;
+    private int commandPort;
+    private int eventPort;
 
     private final String workDir = System.getProperty("workDir");
-    private String commandPortFile;
-    private String eventPortFile;
     private String scenarioDir;
     private final String databaseFile = String.join("/", workDir, "preload.db");
 
@@ -29,11 +37,17 @@ public class DriverConfig {
         portAgentConfig = (Map) map.get("port_agent_config");
         startupConfig = (Map) map.get("startup_config");
         Map driverConfig = (Map) map.get("driver_config");
+        log.info("driverConfig: " + driverConfig);
         scenario = (String) driverConfig.get("scenario");
+        module = (String) driverConfig.get("module");
+        klass = (String) driverConfig.get("class");
+        log.info("class: " + klass);
+        host = (String) driverConfig.get("host");
+        uframe_agent_url = (String) driverConfig.get("uframe_agent_url");
+        commandPort = (Integer) driverConfig.get("command_port");
+        eventPort = (Integer) driverConfig.get("event_port");
 
         scenarioDir = String.join("/", workDir, scenario);
-        commandPortFile = String.join("/", scenarioDir, "command_port");
-        eventPortFile = String.join("/", scenarioDir, "event_port");
     }
 
     public Map getPortAgentConfig() {
@@ -44,16 +58,8 @@ public class DriverConfig {
         return startupConfig;
     }
 
-    public String getCommandPortFile() {
-        return commandPortFile;
-    }
-
-    public String getEventPortFile() {
-        return eventPortFile;
-    }
-
     public String getHost() {
-        return "localhost";
+        return host;
     }
 
     public String getDatabaseFile() {
@@ -68,21 +74,27 @@ public class DriverConfig {
         return workDir;
     }
 
-    private int getPort(String filename) throws IOException {
-        Path path = Paths.get(filename);
-        String contents = new String(Files.readAllBytes(path));
-        return Integer.parseInt(contents.trim());
-    }
-
     public int getCommandPort() throws IOException {
-        return getPort(commandPortFile);
+        return commandPort;
     }
 
     public int getEventPort() throws IOException {
-        return getPort(eventPortFile);
+        return eventPort;
     }
 
     public String getScenarioDir() {
         return scenarioDir;
+    }
+
+    public String getModule() {
+        return module;
+    }
+
+    public String getKlass() {
+        return klass;
+    }
+
+    public String getUframe_agent_url() {
+        return uframe_agent_url;
     }
 }

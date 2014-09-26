@@ -41,8 +41,8 @@ public class Main extends Application {
             controlWindow.shutdownDriver();
             controlWindow.driverProcess.destroy();
         }
-        if (controlWindow.driverInterface != null)
-            controlWindow.driverInterface.shutdown();
+//        if (controlWindow.driverInterface != null)
+//            controlWindow.driverInterface.shutdown();
         System.exit(0);
     }
 

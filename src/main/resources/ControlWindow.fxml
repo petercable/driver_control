@@ -26,7 +26,6 @@
                 <MenuItem onAction="#getParams" text="Get Parameters"/>
             </Menu>
             <Menu text="Test">
-                <MenuItem onAction="#launchDriver" text="Launch Driver"/>
                 <MenuItem onAction="#driverConnect" text="Connect to Driver"/>
             </Menu>
             <Menu text="Help">
