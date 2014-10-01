@@ -1,11 +1,11 @@
 driver_config:
     scenario: THSPH_A
-    uframe_agent_url: http://uframe:12572/instrument
+    uframe_agent_url: http://uframe.local:12572/instrument/api
     module: mi.instrument.um.thsph.ooicore.driver
     class: InstrumentDriver
     command_port: 40001
     event_port: 50001
-    host: 192.168.56.101
+    host: uframe.local
 port_agent_config:
     addr: rsn-port-agent-test.oceanobservatories.org
     port: 13022

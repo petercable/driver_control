@@ -8,7 +8,7 @@ public class Constants {
 
     // Driver Commands
     public final static String PING                     = "driver_ping";
-    public final static String INITIALIZE               = "initialize";
+    public final static String INITIALIZE               = "initParams";
     public final static String CONFIGURE                = "configure";
     public final static String CONNECT                  = "connect";
     public final static String DISCONNECT               = "disconnect";

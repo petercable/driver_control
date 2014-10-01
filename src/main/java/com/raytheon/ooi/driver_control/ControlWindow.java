@@ -320,6 +320,11 @@ public class ControlWindow {
                                                       config.getEventPort());
 
             model.setStatus("Connecting to driver...complete");
+            configure();
+            connect();
+            discover();
+            getMetadata();
+            getParams();
         } catch (Exception e) {
             e.printStackTrace();
             Dialogs.create()
@@ -361,7 +366,7 @@ public class ControlWindow {
     if (! checkController()) return;
         model.setStatus("Configuring driver...");
         commands.configure(model.getConfig().getPortAgentConfig());
-        //commands.initialize(model.getConfig().getStartupConfig());
+        commands.initParams(model.getConfig().getStartupConfig());
     }
 
     public void connect() throws IOException {

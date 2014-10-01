@@ -41,7 +41,7 @@ public class RestDriverCommandInterface {
 
     public static void main(String... args) {
         RestDriverCommandInterface i = new RestDriverCommandInterface("PARAD",
-                "http://uframe:12572/instrument",
+                "http://uframe:12572/instrument/api",
                 "mi.instrument.satlantic.par_ser_600m.ooicore.driver",
                 "InstrumentDriver",
                 "192.168.56.101",
@@ -80,11 +80,11 @@ public class RestDriverCommandInterface {
                 .get(String.class);
     }
 
-    public String initialize(Map<String, Object> config) throws IOException {
-        log.info("initialize");
+    public String initParams(Map<String, Object> config) throws IOException {
+        log.info("initParams");
         Form form = new Form();
         form.param("config", JsonHelper.toJson(config));
-        return target.path("initialize")
+        return target.path("initparams")
                 .request(MediaType.APPLICATION_JSON_TYPE)
                 .post(Entity.entity(form, MediaType.APPLICATION_FORM_URLENCODED_TYPE), String.class);
     }

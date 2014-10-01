@@ -81,9 +81,9 @@ def main():
     command_port = int(options['<command_port>'])
     event_port = int(options['<event_port>'])
 
-    #z = ZmqDriverClient(host, command_port, event_port)
-    #z.start_messaging(callback)
-    #z.ping()
+    z = ZmqDriverClient(host, command_port, event_port)
+    z.start_messaging(callback)
+    z.ping()
     # z.configure(massp_config)
     # z._command('set_init_params', massp_startup_config)
     # z.connect()

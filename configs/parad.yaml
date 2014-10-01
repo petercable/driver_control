@@ -1,11 +1,11 @@
 driver_config:
-    uframe_agent_url: http://uframe:12572/instrument
+    uframe_agent_url: http://uframe.local:12572/instrument/api
     scenario: PARAD
     module: mi.instrument.satlantic.par_ser_600m.ooicore.driver
     class: InstrumentDriver
     command_port: 40005
     event_port: 50005
-    host: 192.168.56.101
+    host: uframe.local
 port_agent_config:
     addr: 69.196.58.141
     port: 13009

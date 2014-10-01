@@ -9,3 +9,4 @@ logs
 *.iml
 *.log
 hs_err_pid*
+edex*json

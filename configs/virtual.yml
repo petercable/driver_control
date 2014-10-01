@@ -1,0 +1,15 @@
+driver_config:
+    scenario: VIRTUAL_INSTRUMENT
+    uframe_agent_url: http://uframe.local:12572/instrument/api
+    module: mi.instrument.virtual.driver
+    class: InstrumentDriver
+    command_port: 40000
+    event_port: 50000
+    host: uframe.local
+port_agent_config:
+    addr: rsn-port-agent-test.oceanobservatories.org
+    port: 13022
+    cmd_port: 12022
+startup_config:
+    parameters:
+        botpt_nano_sample: 1
